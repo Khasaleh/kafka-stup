@@ -1,0 +1,29 @@
+server:
+  port: 8761
+
+# This is a template for a single node.
+# The Ansible playbook will generate a unique version for each node in the cluster.
+eureka:
+  instance:
+    # The hostname should be dynamically set by the deployment script (e.g., eureka1.fazeal.com)
+    hostname: localhost
+
+  client:
+    # In a cluster, a node should not register with itself.
+    # It registers with its peers.
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      # This list will be populated by the Ansible playbook with the addresses of the other peers.
+      # For a 3-node cluster, node 1 would point to nodes 2 and 3.
+      # Example: http://eureka2.fazeal.com:8761/eureka/,http://eureka3.fazeal.com:8761/eureka/
+      defaultZone: http://${EUREKA_PEER_1_HOST:localhost}:8761/eureka/
+
+  server:
+    # In a production HA setup, self-preservation is often disabled to ensure
+    # stale instances are evicted more quickly. This is a trade-off.
+    enable-self-preservation: false
+
+    # The peer-to-peer communication timeout.
+    peer-node-connect-timeout-ms: 2000
+    peer-node-read-timeout-ms: 5000

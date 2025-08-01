@@ -1,0 +1,57 @@
+---
+- name: Deploy Eureka HA Cluster
+  hosts: eureka_nodes
+  become: yes
+  vars:
+    deploy_dir: "/opt/eureka"
+
+  tasks:
+    - name: Update apt cache (for Debian-based systems)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install prerequisite packages
+      package:
+        name:
+          - docker.io
+          - docker-compose
+          - python3-pip
+        state: present
+
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
+        state: present
+
+    - name: Ensure deployment directory exists
+      file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy Docker Compose file to remote host
+      copy:
+        src: ../docker-compose.yml
+        dest: "{{ deploy_dir }}/docker-compose.yml"
+
+    - name: Generate application.yml from template for each node
+      template:
+        src: templates/application.yml.j2
+        dest: "{{ deploy_dir }}/config/application.yml"
+      notify: Restart Eureka Service
+
+    - name: Ensure eureka-server service is running
+      docker_compose:
+        project_src: "{{ deploy_dir }}"
+        state: present
+        restarted: yes # This is a placeholder, handler is better
+      name: eureka-server
+
+  handlers:
+    - name: Restart Eureka Service
+      docker_compose:
+        project_src: "{{ deploy_dir }}"
+        state: present
+        restarted: yes
+      name: eureka-server

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  eureka-server:
+    build:
+      context: .
+      args:
+        # This argument needs to be passed during the build command.
+        # For local testing, you might run:
+        # docker-compose build --build-arg JAR_FILE=path/to/your/eureka-server.jar
+        JAR_FILE: ./eureka-server.jar
+    image: fazeal/eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    volumes:
+      # Mount the configuration file from the host into the container.
+      # This allows for dynamic configuration per node.
+      - ./config/application.yml:/config/application.yml
+    command: >
+      java -jar app.jar --spring.config.location=file:/config/application.yml

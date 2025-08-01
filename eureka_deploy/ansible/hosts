@@ -1,0 +1,16 @@
+# This is a sample inventory file for Ansible.
+# Replace the IP addresses with the actual IPs of your Eureka server VMs.
+
+[eureka_nodes]
+192.168.1.101 ansible_host=192.168.1.101 eureka_hostname=eureka1.fazeal.com
+192.168.1.102 ansible_host=192.168.1.102 eureka_hostname=eureka2.fazeal.com
+192.168.1.103 ansible_host=192.168.1.103 eureka_hostname=eureka3.fazeal.com
+
+[all:vars]
+# SSH user for connecting to the VMs.
+# This can also be set in ansible.cfg or passed on the command line.
+ansible_user=root
+
+# The list of all peer nodes in the cluster. The playbook will use this
+# to configure the `service-url.defaultZone` for each node, excluding itself.
+eureka_peers={% for host in groups['eureka_nodes'] %}http://{{ hostvars[host]['eureka_hostname'] }}:8761/eureka/{% if not loop.last %},{% endif %}{% endfor %}
