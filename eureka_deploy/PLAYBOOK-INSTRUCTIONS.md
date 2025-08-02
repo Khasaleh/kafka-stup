@@ -36,3 +36,12 @@ This playbook deploys a 3-node Eureka server cluster.
 ### d. Successful Outcome
 
 After a successful run, you will have a fully functional, high-availability Eureka cluster running on your target machines. You can verify this by accessing the Eureka dashboard at `http://<your-eureka-server-ip>:8761`.
+
+## 2. Connecting Services to the Eureka Cluster
+
+Your microservices can connect to the Eureka cluster by using the `eureka.client.serviceUrl.defaultZone` property. This property should be set to a comma-separated list of the Eureka server URLs.
+
+In the `microk8s_ansible_deploy` project, this is handled automatically by the `DISCOVERY_URL` environment variable, which is sourced from the `eureka_ip` variable in your cluster definition file.
+
+**Example:**
+If your Eureka servers are running on `192.168.1.101`, `192.168.1.102`, and `192.168.1.103`, you would set the `eureka_ip` in your cluster definition file to one of these IPs, and the `DISCOVERY_URL` would be `http://192.168.1.101:8761`. The microservices will then use this URL to connect to the Eureka cluster and discover the other nodes.
