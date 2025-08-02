@@ -16,6 +16,12 @@ spec:
       labels:
         app: "{{ app_name }}"
     spec:
+      {% if app_image_pull_secrets is defined and app_image_pull_secrets %}
+      imagePullSecrets:
+      {% for secret in app_image_pull_secrets %}
+        - name: {{ secret.name }}
+      {% endfor %}
+      {% endif %}
       containers:
         - name: "{{ app_name }}"
           image: "{{ app_image }}"
@@ -23,8 +29,6 @@ spec:
           ports:
             - containerPort: {{ app_container_port }}
 
-          # Define CPU and Memory resource limits and requests
-          # This is critical for performance and stability.
           resources:
             requests:
               cpu: "{{ app_resources.requests.cpu | default('100m') }}"
@@ -33,23 +37,34 @@ spec:
               cpu: "{{ app_resources.limits.cpu | default('500m') }}"
               memory: "{{ app_resources.limits.memory | default('512Mi') }}"
 
-          # Load environment variables from ConfigMaps and Secrets
-          # This decouples the application image from its configuration.
           envFrom:
             - configMapRef:
                 name: "{{ app_name }}-config"
             - secretRef:
                 name: "{{ app_name }}-secret"
 
+          {% if app_health_check_type | default('httpGet') == 'tcpSocket' %}
+          livenessProbe:
+            tcpSocket:
+              port: {{ app_container_port }}
+            initialDelaySeconds: 180
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: {{ app_container_port }}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          {% else %}
           livenessProbe:
             httpGet:
               path: "{{ app_health_check_path | default('/') }}"
               port: {{ app_container_port }}
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 180
+            periodSeconds: 20
           readinessProbe:
             httpGet:
               path: "{{ app_health_check_path | default('/') }}"
               port: {{ app_container_port }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          {% endif %}

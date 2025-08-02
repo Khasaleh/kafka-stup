@@ -42,11 +42,18 @@ app_hpa:
   cpu_utilization: 70
   memory_utilization: 70
 
-# Health check path for liveness and readiness probes.
-app_health_check_path: "/"
+# Health check configuration
+app_health_check_type: "httpGet" # or "tcpSocket"
+app_health_check_path: "/"     # Only used for httpGet
 
 # Ingress configuration.
 app_ingress_hostname: "my-app.local"
+
+# Image pull secrets (a list of objects with a 'name' key)
+app_image_pull_secrets: []
+# Example:
+# app_image_pull_secrets:
+#   - name: my-docker-registry-secret
 
 # A list of manifests to enable for this application.
 # By default, all are enabled. To disable one, remove it from the list.
