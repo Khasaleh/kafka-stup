@@ -1,75 +1,37 @@
 ---
-- name: Install and Configure MicroK8s Cluster
+- name: Install MicroK8s Cluster
+  hosts: localhost
+  gather_facts: no
+
+  vars_files:
+    - "cluster_vars/{{ env }}.yml"
+
+  tasks:
+    - name: Generate hosts file from template
+      template:
+        src: hosts.j2
+        dest: hosts
+
+- name: Clean up existing MicroK8s installation
   hosts: kube_cluster
   become: yes
-  gather_facts: yes
+  roles:
+    - role: microk8s_cleanup
 
-  tasks:
-    - name: Install MicroK8s snap
-      snap:
-        name: microk8s
-        classic: yes
-        channel: "{{ microk8s_channel | default('1.28/stable') }}"
-
-    - name: Add user to microk8s group for kubectl access
-      user:
-        name: "{{ ansible_user }}"
-        groups: microk8s
-        append: yes
-
-- name: Initialize Primary Master and Join Nodes
-  hosts: kube_masters[0] # Run these tasks on the first master
+- name: Install MicroK8s on all nodes
+  hosts: kube_cluster
   become: yes
+  roles:
+    - role: microk8s_install
 
-  vars:
-    # Use the first master as the point of contact for joining
-    primary_master_ip: "{{ hostvars[groups['kube_masters'][0]]['ansible_host'] | default(groups['kube_masters'][0]) }}"
-
-  tasks:
-    - name: Wait for MicroK8s to be ready
-      command: microk8s status --wait-ready
-
-    - name: Generate join token for other masters
-      command: microk8s add-node
-      register: join_token_master_raw
-
-    - name: Extract master join token
-      set_fact:
-        master_join_token: "{{ join_token_master_raw.stdout_lines | select('search', primary_master_ip) | first }}"
-
-    - name: Generate join token for workers
-      command: microk8s add-node
-      register: join_token_worker_raw
-
-    - name: Extract worker join token
-      set_fact:
-        worker_join_token: "{{ join_token_worker_raw.stdout_lines | select('search', primary_master_ip) | first }}"
-
-    - name: Enable essential addons on the primary master
-      command: "microk8s enable {{ item }}"
-      loop:
-        - dns
-        - hostpath-storage # Default storage class
-        - ingress
-
-- name: Join remaining masters to the cluster
-  hosts: kube_masters[1:] # All masters except the first one
+- name: Initialize MicroK8s cluster on the primary master
+  hosts: kube_masters[0]
   become: yes
-
-  tasks:
-    - name: Join the cluster as a master
-      command: "{{ hostvars[groups['kube_masters'][0]]['master_join_token'] }} --worker=false"
-      args:
-        # Check if the node is already part of the cluster to make this idempotent
-        creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
+  roles:
+    - role: microk8s_master
 
 - name: Join worker nodes to the cluster
   hosts: kube_workers
   become: yes
-
-  tasks:
-    - name: Join the cluster as a worker
-      command: "{{ hostvars[groups['kube_masters'][0]]['worker_join_token'] }} --worker=true"
-      args:
-        # Check if the node is already part of the cluster to make this idempotent
-        creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
+  roles:
+    - role: microk8s_worker

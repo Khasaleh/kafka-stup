@@ -1,0 +1,29 @@
+# ==============================================================================
+# Sample Ansible Inventory for MicroK8s Cluster Setup
+#
+# This file is a Jinja2 template. It is populated by the `install-cluster.yml`
+# playbook using variables from the cluster definition file.
+# ==============================================================================
+
+[kube_masters]
+{% for host in kube_masters %}
+{{ host }}
+{% endfor %}
+
+[kube_workers]
+{% for host in kube_workers %}
+{{ host }}
+{% endfor %}
+
+# This group combines masters and workers for tasks that apply to all nodes,
+# such as installing microk8s.
+[kube_cluster:children]
+kube_masters
+kube_workers
+
+[all:vars]
+# Define the user for SSH connections. This user must have passwordless sudo privileges.
+ansible_user=ubuntu
+
+# The version of MicroK8s to install. This is sourced from the cluster definition file.
+microk8s_channel="{{ microk8s_version }}"

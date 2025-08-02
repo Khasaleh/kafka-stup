@@ -2,13 +2,32 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ app_name }}-config"
-  namespace: "{{ app_namespace | default('default') }}"
+  name: "{{ app.name }}-config"
+  namespace: "{{ app.namespace | default('default') }}"
   labels:
-    app: "{{ app_name }}"
+    app: "{{ app.name }}"
 data:
-  # This data is sourced from the 'app_config' dictionary variable
-  # defined for the application in the inventory/group_vars.
-  {% for key, value in app_config.items() %}
-  {{ key }}: {{ value | to_nice_yaml | indent(2) }}
+  # Common environment variables
+  {% for key, value in common_env.items() %}
+  {{ key }}: {{ value | to_json }}
   {% endfor %}
+
+  # Feign client endpoints
+  {% for key, value in feign_clients.items() %}
+  {{ key }}: {{ value | to_json }}
+  {% endfor %}
+
+  # ElasticSearch endpoints
+  {% for key, value in elastic_search.items() %}
+  {{ key }}: {{ value | to_json }}
+  {% endfor %}
+
+  # Service-specific environment variables
+  {% if app.env is defined %}
+  {% for item in app.env %}
+  {{ item.name }}: {{ item.value | to_json }}
+  {% endfor %}
+  {% endif %}
+
+  # Special case for eureka instance ip-address
+  eureka.instance.ip-address: "{{ app.name }}-service"

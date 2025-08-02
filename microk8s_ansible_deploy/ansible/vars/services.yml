@@ -1,0 +1,337 @@
+# This file defines the list of all microservices to be deployed.
+---
+services:
+  - name: "ads-service"
+    image_tag: "ads-service-205-kube-multi"
+    env:
+      - name: "user-notification-service-api.base"
+        value: "http://notification-service:80"
+      - name: "album-api.base"
+        value: "http://album-service:80"
+      - name: "fazeal-business-admin-service-api.base"
+        value: "http://fazeal-business:80"
+
+  - name: "album-service"
+    image_tag: "album-service-493-kube-multi"
+    container_port: 8099
+
+  - name: "angular-ads"
+    image_tag: "angular-ads-146-kube-multi"
+    container_port: 8082
+    env:
+      - name: "NGINX_PORT"
+        value: "8082"
+    ingress:
+      - host: "angular-customer.fazeal.com"
+        path: /
+        pathType: Prefix
+        port: 8082
+
+  - name: "angular-business"
+    image_tag: "angular-business-2957-kube-multi"
+    container_port: 8082
+    env:
+      - name: "NGINX_PORT"
+        value: "8082"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+
+  - name: "angular-customer"
+    image_tag: "angular-customer-1354-kube-multi"
+    container_port: 8082
+    image_pull_policy: "Always"
+    env:
+      - name: "NGINX_PORT"
+        value: "8082"
+
+  - name: "angular-customer-ssr"
+    image_tag: "angular-customer-ssr-192-kube"
+    container_port: 8082
+    image_pull_policy: "Always"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+    env:
+      - name: "DEBUG"
+        value: "*"
+      - name: "NGINX_PORT"
+        value: "8182"
+      - name: "SSR_PORT"
+        value: "4001"
+
+  - name: "angular-dev"
+    image_tag: "angular-dev-4365-kube-multi"
+    container_port: 4000
+    env:
+      - name: "NGINX_PORT"
+        value: "8080"
+
+  - name: "angular-employees"
+    image_tag: "angular-employees-18-kube-multi"
+    container_port: 8183
+    env:
+      - name: "NGINX_PORT"
+        value: "8183"
+
+  - name: "api-gateway"
+    image_tag: "api-gateway-dev-261-kube-multi"
+    container_port: 8080
+
+  - name: "api-server"
+    image_tag: "api-server-dev-3207-kube-multi"
+    env:
+      - name: "DB_PASS"
+        value: "{{ db_pass }}"
+      - name: "SPRING_PROFILES_ACTIVE"
+        value: "dev"
+      - name: "HOST_IP"
+        value: "api-server"
+      - name: "HOST_PORT"
+        value: "8002"
+      - name: "AWS_ACCESS_KEY"
+        value: "{{ aws_access_key_alt }}"
+      - name: "AWS_SECRET_KEY"
+        value: "{{ aws_secret_key_alt }}"
+      - name: "amazonProperties.accessKey"
+        value: "{{ aws_access_key_alt }}"
+      - name: "amazonProperties.secretKey"
+        value: "{{ aws_secret_key_alt }}"
+      - name: "amazonProperties.bucketName"
+        value: "fazeal-social-nonprod"
+
+
+  - name: "business-chat"
+    image_tag: "business-chat-254-kube-multi"
+    container_port: 3002
+    env:
+      - name: "HOSTNAME"
+        value: "business-chat"
+      - name: "PORT"
+        value: "3002"
+
+  - name: "catalog-service"
+    image_tag: "catalog-service-841-kube-multi"
+    container_port: 8008
+    env:
+      - name: "DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+      - name: "spring.profiles.active"
+        value: "stg"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+
+  - name: "chat-app"
+    image_tag: "chat-app-604-kube-multi"
+    container_port: 3000
+    env:
+      - name: "HOSTNAME"
+        value: "chat-app"
+      - name: "PORT"
+        value: "3000"
+
+  - name: "config-server"
+    image_tag: "config-dev-294-kube-multi"
+    container_port: 8888
+    image_pull_policy: "Always"
+    env:
+      - name: "BUSINESS_MANGE_DB_HOST"
+        value: "192.168.1.213"
+      - name: "CONFIG_USER"
+        value: "{{ config_user }}"
+      - name: "CONFIG_PASS"
+        value: "{{ config_pass }}"
+
+  - name: "cron-jobs"
+    image_tag: "cron-jobs-311-kube-multi"
+    container_port: 8011
+    env:
+      - name: "catalog-service-api.base"
+        value: "http://catalog-service:80/api/v1"
+
+  - name: "customer-service"
+    image_tag: "customer-service-559-kube-multi"
+    env:
+      - name: "DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+      - name: "spring.profiles.active"
+        value: "stg"
+
+  - name: "employees-service"
+    image_tag: "employees-service-39-kube-multi"
+    env:
+      - name: "DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+
+  - name: "events-service"
+    image_tag: "events-service-423-kube-multi"
+    container_port: 8200
+    env:
+      - name: "DB_PASS"
+        value: "{{ db_password }}"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+
+  - name: "fazeal-business"
+    image_tag: "fazeal-business-2853-kube-multi"
+    container_port: 8006
+    env:
+      - name: "BUSINESS_DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+      - name: "HOST_NAME"
+        value: "http://fazeal-business:80"
+      - name: "album-api.name"
+        value: "album-api-client"
+      - name: "encryption.secret.key"
+        value: "{{ encryption_secret_key }}"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social.fazeal.com"
+
+  - name: "fazeal-business-management"
+    image_tag: "fazeal-business-management-451-kube-multi"
+    env:
+      - name: "DB_PASS"
+        value: "{{ db_password }}"
+      - name: "catalog-service-api"
+        value: "http://catalog-service:80/api/v1"
+      - name: "spring.cloud.config.import-check.enabled"
+        value: "false"
+
+  - name: "ingress-nginx-controller"
+    image_tag: "controller:v1.11.2@sha256:d5f8217feeac4887cb1ed21f27c2674e58be06bd8f5184cacea2a69abaf78dce"
+    image_repo: "registry.k8s.io/ingress-nginx"
+    container_port: 80
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "90Mi"
+    args:
+      - "/nginx-ingress-controller"
+      - "--publish-service=$(POD_NAMESPACE)/ingress-nginx-controller"
+      - "--election-id=ingress-nginx-leader"
+      - "--controller-class=k8s.io/ingress-nginx"
+      - "--ingress-class=nginx"
+      - "--configmap=$(POD_NAMESPACE)/ingress-nginx-controller"
+      - "--validating-webhook=:8443"
+      - "--validating-webhook-certificate=/usr/local/certificates/cert"
+      - "--validating-webhook-key=/usr/local/certificates/key"
+      - "--enable-metrics=false"
+    env:
+      - name: "POD_NAME"
+        valueFrom:
+          fieldRef:
+            fieldPath: "metadata.name"
+      - name: "POD_NAMESPACE"
+        valueFrom:
+          fieldRef:
+            fieldPath: "metadata.namespace"
+      - name: "LD_PRELOAD"
+        value: "/usr/local/lib/libmimalloc.so"
+
+  - name: "inventory-service"
+    image_tag: "inventory-service-305-kube-multi"
+
+  - name: "loyalty-service"
+    image_tag: "loyalty-service-322-kube-multi"
+    container_port: 8014
+    env:
+      - name: "LOYALTY_DB_PASSWORD"
+        value: "{{ db_password }}"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+
+  - name: "notification-service"
+    image_tag: "notification-service-853-kube-multi"
+    container_port: 8015
+    env:
+      - name: "DB_PASS"
+        value: "{{ db_password }}"
+      - name: "fazeal-social-service-api.base"
+        value: "api-server"
+      - name: "spring.mail.userName"
+        value: "{{ mail_username }}"
+      - name: "spring.mail.password"
+        value: "{{ mail_password }}"
+      - name: "spring.mail.from"
+        value: "{{ mail_from }}"
+      - name: "encryption.secret.key"
+        value: "{{ encryption_secret_key }}"
+
+  - name: "order-service"
+    image_tag: "order-service-441-kube-multi"
+    container_port: 8010
+    env:
+      - name: "DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+
+  - name: "payment-gateway"
+    image_tag: "payment-gateway-198-kube-multi"
+    container_port: 8053
+    image_pull_policy: "Always"
+    env:
+      - name: "DB_PASSWORD"
+        value: "admin1234"
+      - name: "DISCOVERY_URL"
+        value: "http://192.168.1.211:8761"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+
+  - name: "payment-service"
+    image_tag: "payment-service-259-kube-multi"
+    container_port: 8015
+    env:
+      - name: "encryption.secret.key"
+        value: "{{ encryption_secret_key }}"
+
+  - name: "posts-service"
+    image_tag: "posts-service-1089-kube-multi"
+    container_port: 8101
+
+  - name: "promotion-service"
+    image_tag: "promotion-service-479-kube-multi"
+    container_port: 8015
+    env:
+      - name: "DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+      - name: "spring.main.allow-circular-references"
+        value: "true"
+      - name: "fazeal-business-admin-service-api.base"
+        value: "http://fazeal-business:80"
+      - name: "order-service-api.base"
+        value: "http://order-service:80/api/v1"
+
+  - name: "search-service"
+    image_tag: "search-service-15-kube-multi"
+    container_port: 9090
+    image_pull_policy: "Always"
+
+  - name: "shopping-service"
+    image_tag: "shopping-service-197-kube-multi"
+    container_port: 8100
+
+  - name: "site-management-service"
+    image_tag: "site-management-service-649-kube-multi"
+    env:
+      - name: "DB_PASSWORD"
+        value: "{{ stg_db_password }}"
+      - name: "encryption.secret.key"
+        value: "{{ encryption_secret_key }}"
+
+  - name: "translation-service"
+    image_tag: "translation-service-215-kube-multi"
+    container_port: 3001
+    env:
+      - name: "HOSTNAME"
+        value: "translation-service"
+      - name: "PORT"
+        value: "3001"
+
+  - name: "watermark-detection"
+    image_tag: "watermark_detect-489-kube-multii"
+    image_repo: "khsaleh889/angularmicroservices"
+    container_port: 5555

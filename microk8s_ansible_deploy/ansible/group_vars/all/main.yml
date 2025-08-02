@@ -1,0 +1,99 @@
+# This file will contain common, non-sensitive variables
+---
+# Default resource allocation
+default_resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# Default HPA configuration
+default_hpa:
+  min_replicas: 1
+  max_replicas: 5
+  cpu_utilization: 70
+
+# Default image pull policy
+default_image_pull_policy: "IfNotPresent"
+
+# Common environment variables
+common_env:
+  spring.profiles.active: "{{ env }}"
+  CONFIG_URL: "http://config-server"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  spring.batch.job.enabled: "false"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  spring.cloud.stream.kafka.binder.brokers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.producer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.consumer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  fazeal-social-service-api.base: "http://api-server:80"
+  REDIS_HOST: "{{ redis_host }}"
+  REDIS_PORT: "6379"
+  DB_HOST: "{{ db_host }}"
+  DISCOVERY_URL: "http://{{ eureka_ip }}:8761"
+  EUREKA_HOST: "{{ eureka_ip }}"
+  EUREKA_PORT: "8761"
+  elasticsearch.host: "{{ elasticsearch_host }}"
+  elasticsearch.port: "9200"
+
+# Feign client endpoints
+feign_clients:
+  user-notification-service-api.base: "http://notification-service:80"
+  album-api.base: "http://album-service:80"
+  fazeal-business-admin-service-api.base: "http://fazeal-business:80"
+  shoppinglist-api.base: "http://shopping-service:80"
+  posts-service.base: "http://posts-service:80"
+  events-api.base: "http://events-service:80"
+  loyalty-service-api.base: "http://loyalty-service:80"
+  video-.base: "http://album-service:80"
+  image-api.base: "http://album-service:80"
+  customer-service-api.base: "http://customer-service:80"
+  payment-service-api.base: "http://payment-service:80"
+  order-service-api.base: "http://order-service:80/api/v1"
+  fazeal-logistics-api.base: "http://fazeal-logistics:80/api/v1"
+  stripe-payment-service-api.base: "http://payment-service:80/api/v1/stripepayments"
+  checkout-service-api.base: "http://customer-service:80/api/v1"
+  site-management-service-api.base: "http://site-management-service:80/api/v1"
+  paypal-payment-service-api.base: "http://payment-service:80/api/v1/paypalpayments"
+  fazeal-business-admin-management-service-api.base: "http://fazeal-business-management:80"
+  reservation-service-api.base: "http://restaurant-reservation-service:80/api/v1"
+  catalog-service-api.base: "http://catalog-service:80/api/v1"
+  restaurant-service-api.base: "http://restaurant-catalog-service:80"
+  promotion-service-api.base: "http://promotion-service:80/api/v1"
+  inventory-service-api.base: "http://inventory-service:80/api/v1"
+  fazeal-employees-service-api.base: "http://employees-service:80"
+
+# ElasticSearch endpoints
+elastic_search:
+  chirps-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazealChirps/_delete_by_query"
+  chirps-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazealChirps/_search"
+  family-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazealGroups/_search"
+  hashtag-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazealHashtags/_search"
+  news-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-news-v1/_search"
+  sketch-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-sketch-v1/_search"
+  search-service.base: "https://{{ env }}-elastic.fazeal.com/fazealUsers/_search"
+  voting-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-voting-v1/_delete_by_query"
+  sketch-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-sket-v1/_delete_by_query"
+  chirps-bulkupdate-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-chirps-v1/_update_by_query"
+  chirps-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-chirps-v1/_doc"
+  family-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazealGroups/_doc"
+  family-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazealGroups/_delete_by_query"
+  post-bulkupdate-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-posts-v1/_update_by_query"
+  post-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-posts-v1/_doc"
+  post-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-posts-v1/_delete_by_query"
+  sketch-bulkupdate-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-sketch-v1/_update_by_query"
+  sketch-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-sketch-v1/_doc"
+  user-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazealUsers/_doc"
+  user-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazealUsers/_delete_by_query"
+  voing-bulkupdate-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-voting-v1/_update_by_query"
+  voting-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-voting-v1/_doc"
+  voting-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-voting-v1/_search"
+  products-create-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-products-v1/_doc"
+  products-delete-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-products-v1/_delete_by_query"
+  products-search-service.base: "https://{{ env }}-elastic.fazeal.com/fazeal-products-v1/_search"
