@@ -1,28 +1,32 @@
 ---
-{% if app.ingress_hostname is defined %}
+{% if app.ingress is defined %}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: "{{ app.name }}-ingress"
   namespace: "{{ app.namespace | default('default') }}"
   annotations:
-    # Add any default annotations here
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: "{{ app.ingress_hostname }}"
+  {% for rule in app.ingress %}
+  - {% if rule.host is defined %}host: "{{ rule.host }}"{% endif %}
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - path: "{{ rule.path }}"
+        pathType: "{{ rule.pathType }}"
         backend:
           service:
             name: "{{ app.name }}-service"
             port:
-              number: 80
-  # Add TLS settings if needed
-  # tls:
-  # - hosts:
-  #   - "{{ app.ingress_hostname }}"
-  #   secretName: "{{ app.name }}-tls-secret"
+              number: {{ rule.port }}
+  {% endfor %}
+  {% if app.tls is defined %}
+  tls:
+  - hosts:
+    {% for host in app.tls.hosts %}
+    - "{{ host }}"
+    {% endfor %}
+    secretName: "{{ app.tls.secretName }}"
+  {% endif %}
 {% endif %}

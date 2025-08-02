@@ -21,6 +21,14 @@ services:
     env:
       - name: "NGINX_PORT"
         value: "8082"
+    ingress:
+      - host: "*.stg.fazeal.com"
+        path: /
+        pathType: Prefix
+        port: 8082
+      - path: /
+        pathType: Prefix
+        port: 8082
 
   - name: "angular-business"
     image_tag: "angular-business-2957-kube-multi"
