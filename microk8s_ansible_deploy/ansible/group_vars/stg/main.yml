@@ -1,11 +1,7 @@
 ---
 # Staging environment specific variables
+# These variables are sourced from the cluster definition file
+# cluster_vars/stg.yml
+
+# The `env` variable is still defined here to identify the environment
 env: "stg"
-kafka_broker_ip: "192.168.2.225" # Placeholder
-db_host: "192.168.2.213" # Placeholder
-discovery_url: "http://192.168.2.212:8761" # Placeholder
-redis_host: "192.168.2.217" # Placeholder
-eureka_host: "192.168.2.212" # Placeholder
-elasticsearch_host: "elasticsearch-stg-master-hl.default.svc.cluster.local" # Placeholder
-dataload_db_host: "192.168.2.213" # Placeholder
-ingress_domain: "stg.fazeal.com"

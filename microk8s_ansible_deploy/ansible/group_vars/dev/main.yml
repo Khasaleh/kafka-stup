@@ -1,11 +1,7 @@
 ---
 # Development environment specific variables
+# These variables are sourced from the cluster definition file
+# cluster_vars/dev.yml
+
+# The `env` variable is still defined here to identify the environment
 env: "dev"
-kafka_broker_ip: "192.168.1.225"
-db_host: "192.168.1.213"
-discovery_url: "http://192.168.1.212:8761"
-redis_host: "192.168.1.217"
-eureka_host: "192.168.1.212"
-elasticsearch_host: "elasticsearch-1736319531-master-hl.default.svc.cluster.local"
-dataload_db_host: "192.168.1.213"
-ingress_domain: "fazeal.com"
