@@ -1,13 +1,13 @@
 servers:
   - ip: 192.168.1.201
     username: root
-    password: pass123
+    password: "YOUR_PASSWORD_HERE"
   - ip: 192.168.1.202
     username: root
-    password: pass123
+    password: "YOUR_PASSWORD_HERE"
   - ip: 192.168.1.203
     username: root
-    password: pass123
+    password: "YOUR_PASSWORD_HERE"
 
 kafka:
   version: "3.7.0"

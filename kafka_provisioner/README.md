@@ -2,6 +2,10 @@
 
 This script automates the provisioning of a horizontally scalable Kafka cluster in High Availability (HA) mode.
 
+## Authentication
+
+This project uses password-based authentication. Please see the [AUTHENTICATION.md](../AUTHENTICATION.md) file for instructions on how to set up and use passwords.
+
 ## Prerequisites
 
 - Python 3.6+

@@ -13,11 +13,15 @@ This project provides an automated way to deploy a high-availability (HA) Eureka
   - `deploy-eureka-cluster.yml`: The main Ansible playbook for deploying the cluster.
   - `templates/application.yml.j2`: A Jinja2 template used by the playbook to generate a unique `application.yml` for each node in the cluster.
 
+## Authentication
+
+This project uses password-based authentication. Please see the [AUTHENTICATION.md](../AUTHENTICATION.md) file for instructions on how to set up and use passwords.
+
 ## Prerequisites
 
 1.  **Ansible Control Node**: A machine with Ansible installed where you will run the playbook from.
 2.  **Target VMs**: A set of servers (VMs or bare metal) with a supported Linux distribution (e.g., Ubuntu, CentOS).
-3.  **SSH Access**: You must have SSH key-based access from the Ansible control node to the target VMs. The user must have `sudo` privileges.
+3.  **SSH Access**: You must have SSH access from the Ansible control node to the target VMs. The user must have `sudo` privileges.
 4.  **Eureka Server JAR**: This automation is for deploying a pre-built Eureka server. You need to have the application `.jar` file ready. By default, the `docker-compose.yml` assumes it is named `eureka-server.jar` in the project root.
 
 ## Deployment Steps

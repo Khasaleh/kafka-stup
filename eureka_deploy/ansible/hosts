@@ -10,6 +10,7 @@
 # SSH user for connecting to the VMs.
 # This can also be set in ansible.cfg or passed on the command line.
 ansible_user=root
+ansible_password="YOUR_PASSWORD_HERE"
 
 # The list of all peer nodes in the cluster. The playbook will use this
 # to configure the `service-url.defaultZone` for each node, excluding itself.

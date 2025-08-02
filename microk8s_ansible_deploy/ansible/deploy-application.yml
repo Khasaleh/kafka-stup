@@ -1,48 +1,53 @@
 ---
-- name: Pre-flight checks
-  hosts: localhost
-  gather_facts: no
-  tasks:
-    - name: Check if env variable is defined
-      fail:
-        msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
-      when: env is not defined
-
-- import_playbook: deploy-elastic-stack.yml
-- import_playbook: deploy-ingress.yml
-- import_playbook: deploy-dataload-service.yml
-
-- name: Deploy All Applications to the MicroK8s Cluster
+- name: Deploy a Sample Application to the MicroK8s Cluster
   hosts: localhost
   gather_facts: no
 
-  # Load the service definitions. The 'services' variable will be a list.
-  vars_files:
-    - "group_vars/{{ env }}/main.yml"
-    - vars/services.yml
-    - group_vars/all/main.yml
-    - group_vars/all/vault.yml
+  vars:
+    # --- Override the default variables from the 'app_deployer' role here ---
 
-  tasks:
-    - name: Create Docker Hub secret
-      k8s:
-        state: present
-        definition:
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: dockerhub-secret
-            namespace: "{{ app.namespace | default('default') }}"
-          type: kubernetes.io/dockerconfigjson
-          data:
-            .dockerconfigjson: "{{ dockerhub_secret_json | b64encode }}"
-      run_once: true
+    # Application-specific settings
+    app_name: "nginx-web"
+    app_namespace: "production"
+    app_image: "nginx:1.21"
+    app_replicas: 2
+    app_container_port: 80
 
-    - name: "Deploying service: {{ item.name }}"
-      include_role:
-        name: app_deployer
-      # Loop over the list of services and pass the dictionary as a variable
-      loop: "{{ services }}"
-      # The 'app' variable will hold the service-specific data for the role
-      vars:
-        app: "{{ item }}"
+    # Configuration for the ConfigMap
+    app_config:
+      NGINX_HOST: "nginx-web.fazeal.com"
+      NGINX_PORT: "80"
+
+    # Sensitive data for the Secret (use Ansible Vault in production)
+    app_secrets:
+      API_KEY: "supersecretkey"
+
+    # Define resource limits for this specific application
+    app_resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "100m"
+        memory: "128Mi"
+
+    # HPA settings for the NGINX app
+    app_hpa:
+      min_replicas: 2
+      max_replicas: 10
+      cpu_utilization: 75 # Custom CPU target for this app
+
+    # Ingress settings
+    app_ingress_hostname: "nginx-web.fazeal.com"
+
+    # For this app, we want all standard manifests
+    enabled_manifests:
+      - configmap.yml
+      - secret.yml
+      - deployment.yml
+      - service.yml
+      - hpa.yml
+      - ingress.yml
+
+  roles:
+    - role: app_deployer

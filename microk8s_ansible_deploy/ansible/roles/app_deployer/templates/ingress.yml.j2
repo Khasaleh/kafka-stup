@@ -1,53 +1,27 @@
 ---
-{% if app.ingress is defined %}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: "{{ app.name }}-ingress"
-  namespace: "{{ app.namespace | default('default') }}"
+  name: "{{ app_name }}-ingress"
+  namespace: "{{ app_namespace | default('default') }}"
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Use the default ingress controller provided by microk8s
+    kubernetes.io/ingress.class: "public"
+    # Optional: redirect HTTP to HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  rules:
-  {% for rule in app.ingress %}
-  - host: "{{ env }}-{{ rule.host }}"
-    http:
-      paths:
-      - path: "{{ rule.path }}"
-        pathType: "{{ rule.pathType }}"
-        backend:
-          service:
-            name: "{{ app.name }}-service"
-            port:
-              number: {{ rule.port }}
-  {% endfor %}
-  {% if app.tls is defined %}
   tls:
-  - hosts:
-    {% for host in app.tls.hosts %}
-    - "{{ env }}-{{ host }}"
-    {% endfor %}
-    secretName: "{{ app.tls.secretName }}"
-  {% endif %}
-{% endif %}
-
-{% if app.name == 'config-server' %}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: config-server-ingress
-  namespace: default
-spec:
+    - hosts:
+        - {{ app_ingress_hostname }}
+      secretName: "{{ app_name }}-tls-secret" # Assumes a secret with this name exists
   rules:
-  - host: "{{ env }}-config.fazeal.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: config-server-service
-            port:
-              number: 80
-{% endif %}
+    - host: {{ app_ingress_hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ app_name }}-service"
+                port:
+                  number: {{ app_container_port }}
