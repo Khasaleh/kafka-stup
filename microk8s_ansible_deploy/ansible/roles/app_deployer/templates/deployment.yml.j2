@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ app_name }}-deployment"
+  namespace: "{{ app_namespace | default('default') }}"
+  labels:
+    app: "{{ app_name }}"
+spec:
+  replicas: {{ app_replicas | default(1) }}
+  selector:
+    matchLabels:
+      app: "{{ app_name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ app_name }}"
+    spec:
+      containers:
+        - name: "{{ app_name }}"
+          image: "{{ app_image }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ app_container_port }}
+
+          # Define CPU and Memory resource limits and requests
+          # This is critical for performance and stability.
+          resources:
+            requests:
+              cpu: "{{ app_resources.requests.cpu | default('100m') }}"
+              memory: "{{ app_resources.requests.memory | default('128Mi') }}"
+            limits:
+              cpu: "{{ app_resources.limits.cpu | default('500m') }}"
+              memory: "{{ app_resources.limits.memory | default('512Mi') }}"
+
+          # Load environment variables from ConfigMaps and Secrets
+          # This decouples the application image from its configuration.
+          envFrom:
+            - configMapRef:
+                name: "{{ app_name }}-config"
+            - secretRef:
+                name: "{{ app_name }}-secret"
+
+          livenessProbe:
+            httpGet:
+              path: "{{ app_health_check_path | default('/') }}"
+              port: {{ app_container_port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: "{{ app_health_check_path | default('/') }}"
+              port: {{ app_container_port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5

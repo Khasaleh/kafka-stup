@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ app_name }}-ingress"
+  namespace: "{{ app_namespace | default('default') }}"
+  annotations:
+    # Use the default ingress controller provided by microk8s
+    kubernetes.io/ingress.class: "public"
+    # Optional: redirect HTTP to HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - {{ app_ingress_hostname }}
+      secretName: "{{ app_name }}-tls-secret" # Assumes a secret with this name exists
+  rules:
+    - host: {{ app_ingress_hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ app_name }}-service"
+                port:
+                  number: {{ app_container_port }}

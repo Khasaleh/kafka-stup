@@ -1,0 +1,59 @@
+---
+# Default variables for the app_deployer role.
+# These can be overridden in the playbook or inventory for each application.
+
+# The name of the application. This is used for labeling and naming resources.
+app_name: "my-app"
+
+# The namespace to deploy the application into.
+app_namespace: "default"
+
+# The Docker image for the application.
+app_image: "nginx:latest"
+
+# The number of initial replicas for the deployment.
+app_replicas: 2
+
+# The port the container exposes.
+app_container_port: 80
+
+# A dictionary of non-sensitive key-value pairs for the ConfigMap.
+app_config:
+  EXAMPLE_CONFIG: "Hello World"
+
+# A dictionary of sensitive key-value pairs for the Secret.
+# Remember to use Ansible Vault for these values in a real environment.
+app_secrets:
+  DATABASE_PASSWORD: "insecure-password"
+
+# Resource requests and limits for the container.
+app_resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# HPA (Horizontal Pod Autoscaler) configuration.
+app_hpa:
+  min_replicas: 2
+  max_replicas: 5
+  cpu_utilization: 70
+  memory_utilization: 70
+
+# Health check path for liveness and readiness probes.
+app_health_check_path: "/"
+
+# Ingress configuration.
+app_ingress_hostname: "my-app.local"
+
+# A list of manifests to enable for this application.
+# By default, all are enabled. To disable one, remove it from the list.
+enabled_manifests:
+  - configmap.yml
+  - secret.yml
+  - deployment.yml
+  - service.yml
+  - hpa.yml
+  - ingress.yml
