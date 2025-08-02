@@ -9,7 +9,7 @@
       snap:
         name: microk8s
         classic: yes
-        channel: "{{ microk8s_channel | default('1.28/stable') }}"
+        channel: "{{ microk8s_version | default('1.28/stable') }}"
 
     - name: Add user to microk8s group for kubectl access
       user:
