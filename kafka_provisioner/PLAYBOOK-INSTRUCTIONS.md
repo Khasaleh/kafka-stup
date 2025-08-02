@@ -41,3 +41,12 @@ This script automates the setup of a horizontally scalable Kafka cluster in High
 ### d. Successful Outcome
 
 After a successful run, you will have a fully functional Kafka cluster running on your target servers. The script will print "🚀 Kafka Cluster Deployment and Validation Complete! 🚀" to the console.
+
+## 2. Connecting Services to the Kafka Cluster
+
+Your microservices can connect to the Kafka cluster by using the `spring.kafka.bootstrap-servers` property. This property should be set to a comma-separated list of the Kafka broker URLs.
+
+In the `microk8s_ansible_deploy` project, this is handled automatically by the `kafka_broker_ip` variable in your cluster definition file.
+
+**Example:**
+If your Kafka brokers are running on `192.168.1.225`, `192.168.1.226`, and `192.168.1.227`, you would set the `kafka_broker_ip` in your cluster definition file to one of these IPs, and the `bootstrap-servers` properties would be configured to use this IP. The microservices will then use this to connect to the Kafka cluster and discover the other brokers.
