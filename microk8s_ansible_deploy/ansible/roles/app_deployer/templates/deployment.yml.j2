@@ -58,6 +58,18 @@ spec:
             successThreshold: 1
             failureThreshold: 3
             timeoutSeconds: 1
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "{{ app.name }}"
+              topologyKey: "kubernetes.io/hostname"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
