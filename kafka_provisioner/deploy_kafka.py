@@ -12,11 +12,11 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- All helper and deployment functions are defined here ---
-def connect_ssh(ip, username):
+def connect_ssh(ip, username, password):
     try:
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(hostname=ip, username=username, timeout=10)
+        ssh_client.connect(hostname=ip, username=username, password=password, timeout=10)
         return ssh_client
     except Exception as e:
         logging.error(f"Failed to connect to {ip}: {e}")
@@ -50,7 +50,7 @@ def run_preflight_checks(servers):
     logging.info("--- Starting Pre-flight Checks ---")
     all_checks_passed = True
     for server in servers:
-        ssh = connect_ssh(server['ip'], server['username'])
+        ssh = connect_ssh(server['ip'], server['username'], server['password'])
         if not ssh: all_checks_passed = False; continue
         out, _, code = execute_command(ssh, "cat /etc/os-release", ignore_errors=True)
         if code == 0:
@@ -64,7 +64,7 @@ def run_preflight_checks(servers):
 def install_dependencies(servers):
     logging.info("--- Starting Dependency Installation ---")
     for server in servers:
-        ssh = connect_ssh(server['ip'], server['username'])
+        ssh = connect_ssh(server['ip'], server['username'], server['password'])
         if not ssh: continue
         _, _, code = execute_command(ssh, "java -version", ignore_errors=True)
         if code == 0: ssh.close(); continue
@@ -84,7 +84,7 @@ def distribute_kafka(servers, kafka_config):
     if not os.path.exists(local_path):
         urllib.request.urlretrieve(f"https://archive.apache.org/dist/kafka/{version}/{tgz_name}", local_path)
     for server in servers:
-        ssh = connect_ssh(server['ip'], server['username'])
+        ssh = connect_ssh(server['ip'], server['username'], server['password'])
         if not ssh: continue
         _, _, code = execute_command(ssh, "test -d /opt/kafka", ignore_errors=True)
         if code == 0: ssh.close(); continue
@@ -103,7 +103,7 @@ def deploy_zookeeper(servers):
     zk_props += "\n".join([f"server.{i+1}={s['ip']}:2888:3888" for i, s in enumerate(servers)])
     zk_service = "[Unit]\nDescription=Apache Zookeeper server\nRequires=network.target\nAfter=network.target\n\n[Service]\nType=simple\nUser=kafka\nGroup=kafka\nExecStart=/opt/kafka/bin/zookeeper-server-start.sh /opt/kafka/config/zookeeper.properties\nExecStop=/opt/kafka/bin/zookeeper-server-stop.sh\nRestart=on-abnormal\n\n[Install]\nWantedBy=multi-user.target"
     for i, server in enumerate(servers):
-        ssh = connect_ssh(server['ip'], server['username'])
+        ssh = connect_ssh(server['ip'], server['username'], server['password'])
         if not ssh: continue
         execute_command(ssh, "sudo groupadd -f kafka && sudo useradd -r -g kafka -s /bin/false kafka", ignore_errors=True)
         execute_command(ssh, "sudo mkdir -p /var/lib/zookeeper")
@@ -122,7 +122,7 @@ def deploy_kafka_brokers(servers, kafka_config):
     zk_connect = ",".join([f"{s['ip']}:2181" for s in servers])
     kafka_service = "[Unit]\nDescription=Apache Kafka Server\nRequires=zookeeper.service\nAfter=zookeeper.service\n\n[Service]\nType=simple\nUser=kafka\nGroup=kafka\nExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties\nExecStop=/opt/kafka/bin/kafka-server-stop.sh\nRestart=on-abnormal\n\n[Install]\nWantedBy=multi-user.target"
     for i, server in enumerate(servers):
-        ssh = connect_ssh(server['ip'], server['username'])
+        ssh = connect_ssh(server['ip'], server['username'], server['password'])
         if not ssh: continue
         rep_factor = kafka_config.get('replication_factor', 3)
         server_props = f"broker.id={i}\nlisteners=PLAINTEXT://{server['ip']}:9092\nadvertised.listeners=PLAINTEXT://{server['ip']}:9092\nlog.dirs=/var/lib/kafka/logs\nzookeeper.connect={zk_connect}\ndefault.replication.factor={rep_factor}\nnum.partitions={kafka_config.get('partitions', 6)}\nmin.insync.replicas={max(1, rep_factor - 1)}\n"
@@ -145,7 +145,7 @@ def validate_cluster(servers, kafka_config):
     topic_name = "cluster-validation-topic"
     replication_factor = kafka_config.get('replication_factor', len(servers))
 
-    ssh = connect_ssh(primary_server['ip'], primary_server['username'])
+    ssh = connect_ssh(primary_server['ip'], primary_server['username'], primary_server['password'])
     if not ssh: logging.critical("Cannot connect to primary server for validation."); return
 
     try:

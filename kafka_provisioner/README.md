@@ -4,12 +4,12 @@ This script automates the provisioning of a horizontally scalable Kafka cluster 
 
 ## Authentication
 
-This project uses SSH key-based authentication. Please see the [AUTHENTICATION.md](../AUTHENTICATION.md) file for instructions on how to set up and use SSH keys.
+This project uses password-based authentication. Please see the [AUTHENTICATION.md](../AUTHENTICATION.md) file for instructions on how to set up and use passwords.
 
 ## Prerequisites
 
 - Python 3.6+
-- Access to target servers with SSH key-based authentication.
+- Access to target servers with username/password credentials.
 
 ## Usage
 

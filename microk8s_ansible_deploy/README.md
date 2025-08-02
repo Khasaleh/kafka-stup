@@ -4,7 +4,7 @@ This project contains Ansible playbooks to deploy a MicroK8s cluster and a suite
 
 ## Authentication
 
-This project uses SSH key-based authentication. Please see the [AUTHENTICATION.md](../../AUTHENTICATION.md) file for instructions on how to set up and use SSH keys.
+This project uses password-based authentication. Please see the [AUTHENTICATION.md](../../AUTHENTICATION.md) file for instructions on how to set up and use passwords.
 
 ## Documentation
 
