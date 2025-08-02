@@ -1,4 +1,13 @@
 ---
+- name: Pre-flight checks
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Check if env variable is defined
+      fail:
+        msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
+      when: env is not defined
+
 - import_playbook: deploy-elastic-stack.yml
 - import_playbook: deploy-ingress.yml
 - import_playbook: deploy-dataload-service.yml
@@ -9,6 +18,7 @@
 
   # Load the service definitions. The 'services' variable will be a list.
   vars_files:
+    - "group_vars/{{ env }}/main.yml"
     - vars/services.yml
     - group_vars/all/main.yml
     - group_vars/all/vault.yml

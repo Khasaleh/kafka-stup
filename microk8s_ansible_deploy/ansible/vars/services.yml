@@ -22,11 +22,8 @@ services:
       - name: "NGINX_PORT"
         value: "8082"
     ingress:
-      - host: "*.stg.fazeal.com"
+      - host: "angular-customer.fazeal.com"
         path: /
-        pathType: Prefix
-        port: 8082
-      - path: /
         pathType: Prefix
         port: 8082
 

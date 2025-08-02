@@ -1,0 +1,11 @@
+---
+# Staging environment specific variables
+env: "stg"
+kafka_broker_ip: "192.168.2.225" # Placeholder
+db_host: "192.168.2.213" # Placeholder
+discovery_url: "http://192.168.2.212:8761" # Placeholder
+redis_host: "192.168.2.217" # Placeholder
+eureka_host: "192.168.2.212" # Placeholder
+elasticsearch_host: "elasticsearch-stg-master-hl.default.svc.cluster.local" # Placeholder
+dataload_db_host: "192.168.2.213" # Placeholder
+ingress_domain: "stg.fazeal.com"
