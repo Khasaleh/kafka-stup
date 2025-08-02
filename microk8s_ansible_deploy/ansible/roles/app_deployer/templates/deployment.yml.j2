@@ -2,69 +2,61 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ app_name }}-deployment"
-  namespace: "{{ app_namespace | default('default') }}"
+  name: "{{ app.name }}-deployment"
+  namespace: "{{ app.namespace | default('default') }}"
   labels:
-    app: "{{ app_name }}"
+    app: "{{ app.name }}"
 spec:
-  replicas: {{ app_replicas | default(1) }}
+  replicas: "{{ app.replicas | default(1) }}"
   selector:
     matchLabels:
-      app: "{{ app_name }}"
+      app: "{{ app.name }}"
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
-        app: "{{ app_name }}"
+        app: "{{ app.name }}"
     spec:
-      {% if app_image_pull_secrets is defined and app_image_pull_secrets %}
       imagePullSecrets:
-      {% for secret in app_image_pull_secrets %}
-        - name: {{ secret.name }}
-      {% endfor %}
-      {% endif %}
+        - name: dockerhub-secret
       containers:
-        - name: "{{ app_name }}"
-          image: "{{ app_image }}"
-          imagePullPolicy: Always
+        - name: "{{ app.name }}"
+          image: "khsaleh889/familymicroservices:{{ app.image_tag }}"
+          imagePullPolicy: "{{ app.image_pull_policy | default(default_image_pull_policy) }}"
           ports:
-            - containerPort: {{ app_container_port }}
-
-          resources:
-            requests:
-              cpu: "{{ app_resources.requests.cpu | default('100m') }}"
-              memory: "{{ app_resources.requests.memory | default('128Mi') }}"
-            limits:
-              cpu: "{{ app_resources.limits.cpu | default('500m') }}"
-              memory: "{{ app_resources.limits.memory | default('512Mi') }}"
-
+            - containerPort: 80
           envFrom:
             - configMapRef:
-                name: "{{ app_name }}-config"
+                name: "{{ app.name }}-config"
             - secretRef:
-                name: "{{ app_name }}-secret"
-
-          {% if app_health_check_type | default('httpGet') == 'tcpSocket' %}
+                name: "{{ app.name }}-secret"
+          resources:
+            requests:
+              cpu: "{{ (app.resources.requests.cpu | default(default_resources.requests.cpu)) }}"
+              memory: "{{ (app.resources.requests.memory | default(default_resources.requests.memory)) }}"
+            limits:
+              cpu: "{{ (app.resources.limits.cpu | default(default_resources.limits.cpu)) }}"
+              memory: "{{ (app.resources.limits.memory | default(default_resources.limits.memory)) }}"
           livenessProbe:
             tcpSocket:
-              port: {{ app_container_port }}
-            initialDelaySeconds: 180
-            periodSeconds: 20
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 200
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 3
           readinessProbe:
             tcpSocket:
-              port: {{ app_container_port }}
-            initialDelaySeconds: 20
+              port: 80
+            initialDelaySeconds: 5
             periodSeconds: 10
-          {% else %}
-          livenessProbe:
-            httpGet:
-              path: "{{ app_health_check_path | default('/') }}"
-              port: {{ app_container_port }}
-            initialDelaySeconds: 180
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: "{{ app_health_check_path | default('/') }}"
-              port: {{ app_container_port }}
-            initialDelaySeconds: 20
-            periodSeconds: 10
-          {% endif %}
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

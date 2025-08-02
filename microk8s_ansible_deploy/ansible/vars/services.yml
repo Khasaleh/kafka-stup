@@ -1,0 +1,35 @@
+# This file defines the list of all microservices to be deployed.
+---
+services:
+  - name: "album-service"
+    image_tag: "latest"  # The user can specify the image tag for each service
+    # Override default resources if needed
+    # resources:
+    #   requests:
+    #     cpu: "200m"
+    #     memory: "512Mi"
+    #   limits:
+    #     cpu: "1"
+    #     memory: "1Gi"
+    # Override default HPA settings if needed
+    # hpa:
+    #   min_replicas: 2
+    #   max_replicas: 10
+    #   cpu_utilization: 80
+    # Add any additional environment variables specific to this service
+    # env:
+    #   - name: "CUSTOM_ENV_VAR"
+    #     value: "custom_value"
+
+  - name: "photo-service"
+    image_tag: "latest"
+    # This service has different resource requirements
+    resources:
+      requests:
+        cpu: "150m"
+        memory: "384Mi"
+      limits:
+        cpu: "750m"
+        memory: "768Mi"
+
+  # ... Add all other 38+ services here following the same structure
