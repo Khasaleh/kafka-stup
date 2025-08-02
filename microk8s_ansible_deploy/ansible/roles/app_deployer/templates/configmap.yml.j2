@@ -12,6 +12,16 @@ data:
   {{ key }}: {{ value | to_json }}
   {% endfor %}
 
+  # Feign client endpoints
+  {% for key, value in feign_clients.items() %}
+  {{ key }}: {{ value | to_json }}
+  {% endfor %}
+
+  # ElasticSearch endpoints
+  {% for key, value in elastic_search.items() %}
+  {{ key }}: {{ value | to_json }}
+  {% endfor %}
+
   # Service-specific environment variables
   {% if app.env is defined %}
   {% for item in app.env %}

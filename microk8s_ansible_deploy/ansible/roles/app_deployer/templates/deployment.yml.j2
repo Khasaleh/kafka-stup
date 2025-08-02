@@ -25,10 +25,11 @@ spec:
         - name: dockerhub-secret
       containers:
         - name: "{{ app.name }}"
-          image: "khsaleh889/familymicroservices:{{ app.image_tag }}"
+          image: "{{ app.image_repo | default('khsaleh889/familymicroservices') }}:{{ app.image_tag }}"
           imagePullPolicy: "{{ app.image_pull_policy | default(default_image_pull_policy) }}"
           ports:
-            - containerPort: 80
+            - containerPort: "{{ app.container_port | default(80) }}"
+          args: "{{ app.args | default(omit) }}"
           envFrom:
             - configMapRef:
                 name: "{{ app.name }}-config"
@@ -43,7 +44,7 @@ spec:
               memory: "{{ (app.resources.limits.memory | default(default_resources.limits.memory)) }}"
           livenessProbe:
             tcpSocket:
-              port: 80
+              port: "{{ app.container_port | default(80) }}"
             initialDelaySeconds: 30
             periodSeconds: 200
             successThreshold: 1
@@ -51,7 +52,7 @@ spec:
             timeoutSeconds: 3
           readinessProbe:
             tcpSocket:
-              port: 80
+              port: "{{ app.container_port | default(80) }}"
             initialDelaySeconds: 5
             periodSeconds: 10
             successThreshold: 1

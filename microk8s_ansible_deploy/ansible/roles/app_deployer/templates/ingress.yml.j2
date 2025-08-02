@@ -1,4 +1,5 @@
 ---
+{% if app.ingress_hostname is defined %}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -24,3 +25,4 @@ spec:
   # - hosts:
   #   - "{{ app.ingress_hostname }}"
   #   secretName: "{{ app.name }}-tls-secret"
+{% endif %}

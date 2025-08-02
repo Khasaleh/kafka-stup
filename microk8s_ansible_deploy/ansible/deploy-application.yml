@@ -6,6 +6,8 @@
   # Load the service definitions. The 'services' variable will be a list.
   vars_files:
     - vars/services.yml
+    - group_vars/all/main.yml
+    - group_vars/all/vault.yml
 
   tasks:
     - name: Create Docker Hub secret
