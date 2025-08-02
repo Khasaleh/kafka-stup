@@ -1,0 +1,25 @@
+---
+# Development Environment Cluster Definition
+env: "dev"
+
+# Kubernetes Cluster
+kube_masters:
+  - 192.168.1.200
+  - 192.168.1.205
+kube_workers:
+  - 192.168.1.207
+  - 192.168.1.208
+  - 192.168.1.209
+
+# Service Endpoints
+kafka_broker_ip: "192.168.1.225"
+db_host: "192.168.1.213"
+redis_host: "192.168.1.217"
+eureka_ip: "192.168.1.212"
+dataload_db_host: "192.168.1.213"
+
+# Ingress
+ingress_domain: "fazeal.com"
+
+# MicroK8s
+microk8s_version: "1.28/stable"
