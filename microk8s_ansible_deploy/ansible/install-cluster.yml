@@ -12,6 +12,12 @@
         src: hosts.j2
         dest: hosts
 
+- name: Clean up existing MicroK8s installation
+  hosts: kube_cluster
+  become: yes
+  roles:
+    - role: microk8s_cleanup
+
 - name: Install MicroK8s on all nodes
   hosts: kube_cluster
   become: yes

@@ -20,3 +20,6 @@ dataload_db_host: "192.168.2.213" # Placeholder
 
 # Ingress
 ingress_domain: "stg.fazeal.com"
+
+# MicroK8s
+microk8s_version: "1.28/stable"

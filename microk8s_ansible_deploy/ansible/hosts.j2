@@ -25,6 +25,5 @@ kube_workers
 # Define the user for SSH connections. This user must have passwordless sudo privileges.
 ansible_user=ubuntu
 
-# The version of MicroK8s to install. Using a specific version ensures consistency.
-# See available versions (channels) with `snap info microk8s`.
-microk8s_channel="1.28/stable"
+# The version of MicroK8s to install. This is sourced from the cluster definition file.
+microk8s_channel="{{ microk8s_version }}"
