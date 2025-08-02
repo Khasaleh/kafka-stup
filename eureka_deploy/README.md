@@ -13,6 +13,10 @@ This project provides an automated way to deploy a high-availability (HA) Eureka
   - `deploy-eureka-cluster.yml`: The main Ansible playbook for deploying the cluster.
   - `templates/application.yml.j2`: A Jinja2 template used by the playbook to generate a unique `application.yml` for each node in the cluster.
 
+## Authentication
+
+This project uses SSH key-based authentication. Please see the [AUTHENTICATION.md](../AUTHENTICATION.md) file for more details on how to set up and use SSH keys.
+
 ## Prerequisites
 
 1.  **Ansible Control Node**: A machine with Ansible installed where you will run the playbook from.
