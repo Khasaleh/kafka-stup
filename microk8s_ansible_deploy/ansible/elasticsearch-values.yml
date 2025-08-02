@@ -1,0 +1,39 @@
+---
+version: "8.17.0"
+
+# Run a single-node cluster.
+replicas: 1
+
+# Minimum number of master nodes.
+minimumMasterNodes: 1
+
+# X-Pack security credentials.
+# The password for the `elastic` user will be stored in the vault.
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        native:
+          native1:
+            order: 0
+    http:
+      ssl:
+        enabled: false # For simplicity in a dev environment. Use true in production.
+    transport:
+      ssl:
+        enabled: false # For simplicity in a dev environment. Use true in production.
+
+# Set resource requests and limits.
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+# Persistence configuration.
+persistence:
+  enabled: true
+  size: 10Gi

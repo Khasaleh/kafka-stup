@@ -1,4 +1,5 @@
 ---
+- import_playbook: deploy-elastic-stack.yml
 - import_playbook: deploy-ingress.yml
 - import_playbook: deploy-dataload-service.yml
 
