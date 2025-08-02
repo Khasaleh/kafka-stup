@@ -148,6 +148,9 @@ services:
   - name: "cron-jobs"
     image_tag: "cron-jobs-311-kube-multi"
     container_port: 8011
+    env:
+      - name: "catalog-service-api.base"
+        value: "http://catalog-service:80/api/v1"
 
   - name: "customer-service"
     image_tag: "customer-service-559-kube-multi"
@@ -184,6 +187,8 @@ services:
         value: "album-api-client"
       - name: "encryption.secret.key"
         value: "{{ encryption_secret_key }}"
+      - name: "amazonProperties.endpointUrl"
+        value: "https://s3.us-east-1.wasabisys.com/fazeal-social.fazeal.com"
 
   - name: "fazeal-business-management"
     image_tag: "fazeal-business-management-451-kube-multi"
@@ -295,6 +300,10 @@ services:
         value: "{{ stg_db_password }}"
       - name: "spring.main.allow-circular-references"
         value: "true"
+      - name: "fazeal-business-admin-service-api.base"
+        value: "http://fazeal-business:80"
+      - name: "order-service-api.base"
+        value: "http://order-service:80/api/v1"
 
   - name: "search-service"
     image_tag: "search-service-15-kube-multi"
