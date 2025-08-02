@@ -21,6 +21,9 @@ default_hpa:
 # Default image pull policy
 default_image_pull_policy: "IfNotPresent"
 
+# Kafka Configuration
+kafka_broker_ip: "192.168.1.225"
+
 # Common environment variables
 common_env:
   DB_HOST: "192.168.1.213"
@@ -33,10 +36,10 @@ common_env:
   spring.batch.job.enabled: "false"
   eureka.instance.prefer-ip-address: "true"
   server.port: "80"
-  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
-  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
-  spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
-  spring.kafka.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.cloud.stream.kafka.binder.brokers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.producer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.consumer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
   fazeal-social-service-api.base: "http://api-server:80"
   REDIS_HOST: "192.168.1.217"
   REDIS_PORT: "6379"
