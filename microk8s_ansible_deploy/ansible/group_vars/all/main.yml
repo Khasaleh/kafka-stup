@@ -33,8 +33,13 @@ common_env:
   spring.kafka.consumer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
   spring.kafka.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
   fazeal-social-service-api.base: "http://api-server:80"
+  REDIS_HOST: "{{ redis_host }}"
   REDIS_PORT: "6379"
+  DB_HOST: "{{ db_host }}"
+  DISCOVERY_URL: "http://{{ eureka_ip }}:8761"
+  EUREKA_HOST: "{{ eureka_ip }}"
   EUREKA_PORT: "8761"
+  elasticsearch.host: "{{ elasticsearch_host }}"
   elasticsearch.port: "9200"
 
 # Feign client endpoints
