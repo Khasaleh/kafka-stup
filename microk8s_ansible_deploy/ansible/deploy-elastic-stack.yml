@@ -17,7 +17,7 @@
         chart_version: 8.5.1
         release_namespace: default
         create_namespace: true
-        repo_update: yes
+        update_repo_cache: yes
         values_files:
           - "elasticsearch-values.yml"
 
@@ -27,6 +27,6 @@
         chart_ref: elastic/kibana
         chart_version: 8.5.1
         release_namespace: default
-        repo_update: yes
+        update_repo_cache: yes
         values_files:
           - "kibana-values.yml"
