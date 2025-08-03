@@ -1,11 +1,4 @@
 ---
-- name: Ensure Python kubernetes library is installed
-  pip:
-    name: kubernetes
-    state: present
-  delegate_to: localhost
-  run_once: yes
-
 - name: Create a temporary directory for manifests
   tempfile:
     state: directory
