@@ -23,6 +23,18 @@ This playbook installs and configures a MicroK8s cluster on your target servers.
 3.  **Run the playbook:**
     ```bash
     ansible-playbook -i ansible/hosts install-cluster.yml -e "env=<your-env>"
+    ansible-playbook -i ansible/hosts ansible/install-cluster.yml -e "env=dev" --vault-password-file ansible/ansible-vault-password.txt
+
+
+Here is the command to run that will ask for your password:
+
+ansible-playbook -i ansible/hosts ansible/install-cluster.yml -e "env=dev" --vault-password-file ansible/ansible-vault-password.txt --ask-pass
+When you run this, it will first prompt you for the SSH password:
+
+SSH password:
+You can type your password there. It should then use that password to connect to all the servers in your inventory.
+
+
     ```
     Replace `<your-env>` with the name of your environment (e.g., `dev`).
 

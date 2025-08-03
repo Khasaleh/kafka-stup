@@ -10,15 +10,15 @@
 
 [kube_masters]
 # Add your master node IPs here
-192.168.1.110
-192.168.1.111
+192.168.1.200
+192.168.1.205
 # 192.168.1.112 # Add more masters if needed for a larger HA control plane
 
 [kube_workers]
 # Add your worker node IPs here
-192.168.1.120
-192.168.1.121
-192.168.1.122
+192.168.1.207
+192.168.1.208
+192.168.1.209
 # Add more workers as needed
 
 # This group combines masters and workers for tasks that apply to all nodes,
@@ -29,8 +29,8 @@ kube_workers
 
 [all:vars]
 # Define the user for SSH connections. This user must have passwordless sudo privileges.
-ansible_user=ubuntu
+ansible_user=root
 
 # The version of MicroK8s to install. Using a specific version ensures consistency.
 # See available versions (channels) with `snap info microk8s`.
-microk8s_channel="1.28/stable"
+microk8s_channel="1.33/stable"

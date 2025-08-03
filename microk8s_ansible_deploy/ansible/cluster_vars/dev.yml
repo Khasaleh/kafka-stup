@@ -22,4 +22,4 @@ dataload_db_host: "192.168.1.213"
 ingress_domain: "fazeal.com"
 
 # MicroK8s
-microk8s_version: "1.28/stable"
+microk8s_version: "1.33/stable"
