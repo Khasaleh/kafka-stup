@@ -58,7 +58,7 @@
 
   tasks:
     - name: Join the cluster as a master
-      command: "{{ hostvars[groups['kube_masters'][0]]['master_join_token'] }} --worker=false"
+      command: "{{ hostvars[groups['kube_masters'][0]]['master_join_token'] }}"
       args:
         # Check if the node is already part of the cluster to make this idempotent
         creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
@@ -69,7 +69,7 @@
 
   tasks:
     - name: Join the cluster as a worker
-      command: "{{ hostvars[groups['kube_masters'][0]]['worker_join_token'] }} --worker=true"
+      command: "{{ hostvars[groups['kube_masters'][0]]['worker_join_token'] }} --worker"
       args:
         # Check if the node is already part of the cluster to make this idempotent
         creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
