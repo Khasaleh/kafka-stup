@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dataload-service-celery-worker
+  namespace: default
   labels:
     app: dataload-service
     component: celery-worker
