@@ -14,9 +14,10 @@
       kubernetes.core.helm:
         name: elasticsearch
         chart_ref: elastic/elasticsearch
-        chart_version: 8.17.0
+        chart_version: 8.5.1
         release_namespace: default
         create_namespace: true
+        repo_update: yes
         values_files:
           - "elasticsearch-values.yml"
 
@@ -24,7 +25,8 @@
       kubernetes.core.helm:
         name: kibana
         chart_ref: elastic/kibana
-        chart_version: 8.17.0
+        chart_version: 8.5.1
         release_namespace: default
+        repo_update: yes
         values_files:
           - "kibana-values.yml"
