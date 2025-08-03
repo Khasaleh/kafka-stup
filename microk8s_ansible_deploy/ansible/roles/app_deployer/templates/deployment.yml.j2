@@ -43,6 +43,14 @@ spec:
             - secretRef:
                 name: "{{ app_name }}-secret"
 
+          {% if app.env is defined and app.env %}
+          env:
+          {% for var in app.env %}
+            - name: "{{ var.name }}"
+              value: "{{ var.value }}"
+          {% endfor %}
+          {% endif %}
+
           {% if app_health_check_type | default('httpGet') == 'tcpSocket' %}
           livenessProbe:
             tcpSocket:
