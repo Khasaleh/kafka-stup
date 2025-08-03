@@ -28,4 +28,3 @@
         - 17-job-admission-patch.yml
         - 18-ingress-class.yml
         - 19-validating-webhook.yml
-        - 20-ingress.yml
