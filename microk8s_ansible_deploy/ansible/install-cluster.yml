@@ -17,17 +17,19 @@
         groups: microk8s
         append: yes
 
-- name: Initialize Primary Master and Join Nodes
+- name: Initialize Primary Master and Join Masters
   hosts: kube_masters[0] # Run these tasks on the first master
   become: yes
 
   vars:
-    # Use the first master as the point of contact for joining
     primary_master_ip: "{{ hostvars[groups['kube_masters'][0]]['ansible_host'] | default(groups['kube_masters'][0]) }}"
 
   tasks:
     - name: Wait for MicroK8s to be ready
       command: microk8s status --wait-ready
+      args:
+        # This check makes the task idempotent
+        creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
 
     - name: Generate join token for other masters
       command: microk8s add-node
@@ -36,14 +38,6 @@
     - name: Extract master join token
       set_fact:
         master_join_token: "{{ join_token_master_raw.stdout_lines | select('search', primary_master_ip) | first }}"
-
-    - name: Generate join token for workers
-      command: microk8s add-node
-      register: join_token_worker_raw
-
-    - name: Extract worker join token
-      set_fact:
-        worker_join_token: "{{ join_token_worker_raw.stdout_lines | select('search', primary_master_ip) | first }}"
 
     - name: Enable essential addons on the primary master
       command: "microk8s enable {{ item }}"
@@ -55,7 +49,6 @@
 - name: Join remaining masters to the cluster
   hosts: kube_masters[1:] # All masters except the first one
   become: yes
-
   tasks:
     - name: Join the cluster as a master
       command: "{{ hostvars[groups['kube_masters'][0]]['master_join_token'] }}"
@@ -63,13 +56,28 @@
         # Check if the node is already part of the cluster to make this idempotent
         creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
 
-- name: Join worker nodes to the cluster
+- name: Generate tokens and join worker nodes
   hosts: kube_workers
   become: yes
+  serial: 1 # Process workers one at a time to avoid token conflicts
 
   tasks:
+    - name: Check if node is already in cluster
+      stat:
+        path: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
+      register: kubelet_conf
+
+    - name: Generate a new join token for this worker
+      delegate_to: "{{ groups['kube_masters'][0] }}"
+      command: microk8s add-node
+      register: join_token_worker_raw
+      when: not kubelet_conf.stat.exists
+
+    - name: Extract worker join token
+      set_fact:
+        worker_join_token: "{{ join_token_worker_raw.stdout_lines | select('search', 'microk8s join') | first }}"
+      when: not kubelet_conf.stat.exists
+
     - name: Join the cluster as a worker
-      command: "{{ hostvars[groups['kube_masters'][0]]['worker_join_token'] }} --worker"
-      args:
-        # Check if the node is already part of the cluster to make this idempotent
-        creates: /var/snap/microk8s/current/var/kubernetes/kubelet/kubelet.conf
+      command: "{{ worker_join_token }} --worker"
+      when: not kubelet_conf.stat.exists
