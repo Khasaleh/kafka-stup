@@ -41,8 +41,6 @@
     - name: "Deploying service: {{ item.name }}"
       include_role:
         name: app_deployer
-      # Loop over the list of services and pass the dictionary as a variable
-      loop: "{{ services }}"
-      # The 'app' variable will hold the service-specific data for the role
       vars:
         app: "{{ item }}"
+      loop: "{{ services }}"
