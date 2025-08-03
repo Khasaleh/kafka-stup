@@ -18,6 +18,8 @@
         release_namespace: default
         create_namespace: true
         update_repo_cache: yes
+        wait: yes
+        timeout: 5m
         values_files:
           - "elasticsearch-values.yml"
 
@@ -28,5 +30,6 @@
         chart_version: 8.5.1
         release_namespace: default
         update_repo_cache: yes
+        timeout: 5m
         values_files:
           - "kibana-values.yml"
