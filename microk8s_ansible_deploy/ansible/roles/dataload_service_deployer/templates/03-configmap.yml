@@ -3,7 +3,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: dataload-service-config
+<<<<<<< Updated upstream
   namespace: default
+=======
+>>>>>>> Stashed changes
 data:
   PROJECT_NAME: "Catalog Data Load Service K8s"
   API_PREFIX: "/graphql"

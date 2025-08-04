@@ -27,4 +27,9 @@
         - 16-job-admission-create.yml
         - 17-job-admission-patch.yml
         - 18-ingress-class.yml
+<<<<<<< Updated upstream
         - 19-validating-webhook.yml
+=======
+        - 19-validating-webhook.yml
+        - 20-ingress.yml
+>>>>>>> Stashed changes

@@ -3,7 +3,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dataload-service-celery-worker
+<<<<<<< Updated upstream
   namespace: default
+=======
+>>>>>>> Stashed changes
   labels:
     app: dataload-service
     component: celery-worker

@@ -66,4 +66,8 @@
     path: "{{ manifest_dir.path }}"
     state: absent
   delegate_to: localhost
+<<<<<<< Updated upstream
   run_once: true
+=======
+  run_once: yes
+>>>>>>> Stashed changes
