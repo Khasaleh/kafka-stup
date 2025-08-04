@@ -4,7 +4,10 @@ kind: ConfigMap
 metadata:
   name: dataload-service-config
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   namespace: default
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 data:

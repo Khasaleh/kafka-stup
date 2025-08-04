@@ -4,7 +4,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: uploads-pvc
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   namespace: default
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 spec:

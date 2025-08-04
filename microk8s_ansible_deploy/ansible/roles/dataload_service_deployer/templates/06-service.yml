@@ -4,7 +4,10 @@ kind: Service
 metadata:
   name: dataload-service
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   namespace: default
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
   labels:

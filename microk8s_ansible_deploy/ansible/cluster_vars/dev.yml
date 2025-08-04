@@ -17,7 +17,10 @@ db_host: "192.168.1.213"
 redis_host: "192.168.1.217"
 eureka_ip: "192.168.1.212"
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 elasticsearch_host: "192.168.1.200"
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 dataload_db_host: "192.168.1.213"
@@ -27,7 +30,11 @@ ingress_domain: "fazeal.com"
 
 # MicroK8s
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 microk8s_version: "1.33/stable"
+=======
+microk8s_version: "1.28/stable"
+>>>>>>> Stashed changes
 =======
 microk8s_version: "1.28/stable"
 >>>>>>> Stashed changes

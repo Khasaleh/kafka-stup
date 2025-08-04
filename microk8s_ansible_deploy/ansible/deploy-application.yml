@@ -19,7 +19,10 @@
   # Load the service definitions. The 'services' variable will be a list.
   vars_files:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     - "cluster_vars/{{ env }}.yml"
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     - "group_vars/{{ env }}/main.yml"
@@ -46,13 +49,20 @@
       include_role:
         name: app_deployer
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       vars:
         app: "{{ item }}"
       loop: "{{ services }}"
 =======
+=======
+>>>>>>> Stashed changes
       # Loop over the list of services and pass the dictionary as a variable
       loop: "{{ services }}"
       # The 'app' variable will hold the service-specific data for the role
       vars:
+<<<<<<< Updated upstream
+        app: "{{ item }}"
+>>>>>>> Stashed changes
+=======
         app: "{{ item }}"
 >>>>>>> Stashed changes

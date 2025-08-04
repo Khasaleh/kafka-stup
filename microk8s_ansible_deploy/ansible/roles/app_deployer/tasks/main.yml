@@ -67,7 +67,11 @@
     state: absent
   delegate_to: localhost
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   run_once: true
+=======
+  run_once: yes
+>>>>>>> Stashed changes
 =======
   run_once: yes
 >>>>>>> Stashed changes
