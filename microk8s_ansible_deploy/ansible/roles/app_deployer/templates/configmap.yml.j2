@@ -7,8 +7,25 @@ metadata:
   labels:
     app: "{{ app_name }}"
 data:
-  # This data is sourced from the 'app_config' dictionary variable
-  # defined for the application in the inventory/group_vars.
-  {% for key, value in app_config.items() %}
-  {{ key }}: {{ value | to_nice_yaml | indent(2) }}
-  {% endfor %}
+  # Common environment variables
+  spring.profiles.active: "{{ env }}"
+  CONFIG_URL: "http://config-server"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  spring.batch.job.enabled: "false"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  spring.cloud.stream.kafka.binder.brokers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.producer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.consumer.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  spring.kafka.bootstrap-servers: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
+  fazeal-social-service-api.base: "http://api-server:80"
+  REDIS_HOST: "{{ redis_host }}"
+  REDIS_PORT: "6379"
+  DB_HOST: "{{ db_host }}"
+  DISCOVERY_URL: "http://{{ eureka_ip }}:8761"
+  EUREKA_HOST: "{{ eureka_ip }}"
+  EUREKA_PORT: "8761"
+  elasticsearch.host: "{{ elasticsearch_host }}"
+  elasticsearch.port: "9200" 

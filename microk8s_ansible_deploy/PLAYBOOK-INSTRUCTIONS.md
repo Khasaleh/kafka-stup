@@ -8,33 +8,62 @@ This playbook installs and configures a MicroK8s cluster on your target servers.
 
 ### a. How to Run
 
-1.  **Configure your environment:**
+1.  **Configure your inventory:**
+    -   Open the `ansible/hosts` file.
+    -   Define a `kube_cluster` group with all your master and worker nodes.
+    -   Define `kube_masters` and `kube_workers` groups with the corresponding nodes.
+    -   Ensure your inventory is configured correctly for Ansible to connect (e.g., `ansible_host`, `ansible_user`).
+
+2.  **Configure your environment:**
     -   Open the `ansible/cluster_vars/<your-env>.yml` file (e.g., `ansible/cluster_vars/dev.yml`).
-    -   Update the `kube_masters` and `kube_workers` lists with the IP addresses of your servers.
-    -   Update the `microk8s_version` if you want to install a different version of MicroK8s.
+    -   Update the `kube_masters` and `kube_workers` lists with the inventory hostnames of your servers.
+    -   Update the `microk8s_version` to specify the channel for the MicroK8s snap (e.g., `1.28/stable`).
     -   Ensure you have SSH access to all the servers from your Ansible control node.
 
-2.  **Run the playbook:**
+3.  **Run the playbook:**
     ```bash
     ansible-playbook -i ansible/hosts install-cluster.yml -e "env=<your-env>"
+    ansible-playbook -i ansible/hosts ansible/install-cluster.yml -e "env=dev" --vault-password-file ansible/ansible-vault-password.txt
+
+
+Here is the command to run that will ask for your password:
+
+ansible-playbook -i ansible/hosts ansible/install-cluster.yml -e "env=dev" --vault-password-file ansible/ansible-vault-password.txt --ask-pass
+When you run this, it will first prompt you for the SSH password:
+
+SSH password:
+You can type your password there. It should then use that password to connect to all the servers in your inventory.
+
+
     ```
     Replace `<your-env>` with the name of your environment (e.g., `dev`).
 
 ### b. Playbook Steps
 
-1.  **Generate `hosts` file:** The playbook first generates an Ansible inventory file (`hosts`) from the `hosts.j2` template using the server IPs from your cluster definition file.
-2.  **Clean up existing MicroK8s installation:** The `microk8s_cleanup` role is run on all nodes to ensure a clean installation. This role will:
-    -   Stop the MicroK8s service.
-    -   Reset the MicroK8s cluster.
-    -   Remove the MicroK8s snap.
-3.  **Install MicroK8s:** The `microk8s_install` role is run on all nodes to install the version of MicroK8s specified in your cluster definition file.
-4.  **Initialize the master node:** The `microk8s_master` role is run on the first master node to initialize the MicroK8s cluster.
-5.  **Join worker nodes:** The `microk8s_worker` role is run on all the worker nodes to join them to the cluster.
+The `install-cluster.yml` playbook executes in several plays:
+
+1.  **Install MicroK8s:**
+    -   Installs the MicroK8s snap on all nodes in the `kube_cluster` group. The version is determined by the `microk8s_version` variable in your environment's `cluster_vars` file.
+    -   Adds the `ansible_user` to the `microk8s` group to allow `kubectl` access.
+
+2.  **Initialize Primary Master:**
+    -   Runs only on the first host in the `kube_masters` group.
+    -   Waits for MicroK8s to be ready.
+    -   Generates join tokens for other masters and for worker nodes.
+    -   Enables essential MicroK8s addons: `dns`, `hostpath-storage`, and `ingress`.
+
+3.  **Join Other Masters:**
+    -   Runs on the rest of the hosts in the `kube_masters` group.
+    -   Joins them to the cluster as master nodes.
+
+4.  **Join Worker Nodes:**
+    -   Runs on all hosts in the `kube_workers` group.
+    -   Joins them to the cluster as worker nodes.
 
 ### c. Troubleshooting
 
 -   **"Permission denied" errors:** Ensure that your SSH user has passwordless `sudo` privileges on all the target servers.
--   **"Could not resolve hostname" errors:** Ensure that the IP addresses in your cluster definition file are correct and that your Ansible control node can reach them.
+-   **"Could not resolve hostname" errors:** Ensure that the hostnames in your inventory file are correct and that your Ansible control node can reach them.
 -   **Installation fails:** If the MicroK8s installation fails, you can check the logs on the target servers for more information (`/var/log/syslog` or `journalctl -u snap.microk8s.daemon-containerd`).
 
 ### d. Successful Outcome

@@ -1,10 +1,22 @@
 ---
-- name: Ensure Python kubernetes library is installed
-  pip:
-    name: kubernetes
-    state: present
-  delegate_to: localhost
-  run_once: yes
+- name: Map app variables to template variables
+  set_fact:
+    app_name: "{{ app.name }}"
+    app_namespace: "{{ app.namespace | default('default') }}"
+    app_image: "{{ app.image_repo | default('khsaleh889/angularmicroservices') }}:{{ app.image_tag }}"
+    app_replicas: "{{ app.replicas | default(1) }}"
+    app_container_port: "{{ app.container_port | default(80) }}"
+    app_resources: "{{ app.resources | default({'requests': {'cpu': '100m', 'memory': '128Mi'}, 'limits': {'cpu': '500m', 'memory': '512Mi'}}) }}"
+    app_image_pull_secrets: "{{ app.image_pull_secrets | default([]) }}"
+    app_health_check_type: "{{ app.health_check_type | default('httpGet') }}"
+    app_health_check_path: "{{ app.health_check_path | default('/') }}"
+    app_config: "{{ app.config | default({}) }}"
+    app_secrets: "{{ app.secrets | default({}) }}"
+    app_hpa: "{{ app.hpa | default({'min_replicas': 2, 'max_replicas': 10, 'cpu_utilization': 70, 'memory_utilization': 70}) }}"
+    app_ingress_hostname: "{{ app.ingress_hostname | default(app.name + '.local') }}"
+    enabled_manifests: "{{ app.enabled_manifests | default(['configmap.yml', 'secret.yml', 'deployment.yml', 'service.yml', 'hpa.yml', 'ingress.yml']) }}"
+
+
 
 - name: Create a temporary directory for manifests
   tempfile:
@@ -12,14 +24,14 @@
     suffix: "{{ app_name }}"
   register: manifest_dir
   delegate_to: localhost
-  run_once: yes
+  run_once: true
 
 - name: Generate Kubernetes manifests from templates
   template:
-    src: "{{ item }}.j2"
-    dest: "{{ manifest_dir.path }}/{{ item }}"
+    src: "{{ manifest_file }}.j2"
+    dest: "{{ manifest_dir.path }}/{{ manifest_file }}"
   delegate_to: localhost
-  run_once: yes
+  run_once: true
   loop:
     - configmap.yml
     - secret.yml
@@ -27,15 +39,17 @@
     - service.yml
     - hpa.yml
     - ingress.yml
-  when: item in enabled_manifests
+  loop_control:
+    loop_var: manifest_file
+  when: manifest_file in enabled_manifests
 
 - name: Apply the generated manifests to the cluster
   k8s:
     state: present
-    src: "{{ manifest_dir.path }}/{{ item }}"
-    kubeconfig: "~/.kube/config" # This should point to the microk8s config
+    src: "{{ manifest_dir.path }}/{{ manifest_file }}"
+    kubeconfig: "~/.kube/config"
   delegate_to: localhost
-  run_once: yes
+  run_once: true
   loop:
     - configmap.yml
     - secret.yml
@@ -43,11 +57,13 @@
     - service.yml
     - hpa.yml
     - ingress.yml
-  when: item in enabled_manifests
+  loop_control:
+    loop_var: manifest_file
+  when: manifest_file in enabled_manifests
 
 - name: Clean up temporary manifest directory
   file:
     path: "{{ manifest_dir.path }}"
     state: absent
   delegate_to: localhost
-  run_once: yes
+  run_once: true

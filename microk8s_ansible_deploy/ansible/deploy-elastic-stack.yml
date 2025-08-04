@@ -1,0 +1,35 @@
+---
+- name: Deploy Elastic Stack (Elasticsearch and Kibana)
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Add Elastic Helm repository
+      kubernetes.core.helm_repository:
+        name: elastic
+        repo_url: "https://helm.elastic.co"
+      run_once: true
+
+    - name: Deploy Elasticsearch
+      kubernetes.core.helm:
+        name: elasticsearch
+        chart_ref: elastic/elasticsearch
+        chart_version: 8.5.1
+        release_namespace: default
+        create_namespace: true
+        update_repo_cache: yes
+        wait: yes
+        timeout: 5m
+        values_files:
+          - "elasticsearch-values.yml"
+
+    - name: Deploy Kibana
+      kubernetes.core.helm:
+        name: kibana
+        chart_ref: elastic/kibana
+        chart_version: 8.5.1
+        release_namespace: default
+        update_repo_cache: yes
+        timeout: 5m
+        values_files:
+          - "kibana-values.yml"
