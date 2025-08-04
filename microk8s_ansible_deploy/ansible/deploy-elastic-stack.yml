@@ -14,12 +14,24 @@
       kubernetes.core.helm:
         name: elasticsearch
         chart_ref: elastic/elasticsearch
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
         chart_version: 8.5.1
         release_namespace: default
         create_namespace: true
         update_repo_cache: yes
         wait: yes
         timeout: 5m
+=======
+        chart_version: 8.17.0
+        release_namespace: default
+        create_namespace: true
+>>>>>>> Stashed changes
+=======
+        chart_version: 8.17.0
+        release_namespace: default
+        create_namespace: true
+>>>>>>> Stashed changes
         values_files:
           - "elasticsearch-values.yml"
 
@@ -27,9 +39,19 @@
       kubernetes.core.helm:
         name: kibana
         chart_ref: elastic/kibana
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
         chart_version: 8.5.1
         release_namespace: default
         update_repo_cache: yes
         timeout: 5m
+=======
+        chart_version: 8.17.0
+        release_namespace: default
+>>>>>>> Stashed changes
+=======
+        chart_version: 8.17.0
+        release_namespace: default
+>>>>>>> Stashed changes
         values_files:
           - "kibana-values.yml"

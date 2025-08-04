@@ -3,7 +3,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dataload-service
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
   namespace: default
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
   labels:
     app: dataload-service
     component: fastapi
