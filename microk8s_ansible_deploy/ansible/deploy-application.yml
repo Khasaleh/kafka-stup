@@ -18,6 +18,7 @@
 
   # Load the service definitions. The 'services' variable will be a list.
   vars_files:
+    - "cluster_vars/{{ env }}.yml"
     - "group_vars/{{ env }}/main.yml"
     - vars/services.yml
     - group_vars/all/main.yml

@@ -16,6 +16,7 @@ kafka_broker_ip: "192.168.1.225"
 db_host: "192.168.1.213"
 redis_host: "192.168.1.217"
 eureka_ip: "192.168.1.212"
+elasticsearch_host: "192.168.1.200"
 dataload_db_host: "192.168.1.213"
 
 # Ingress
