@@ -175,7 +175,26 @@ run_command "kubectl wait --for=condition=available --timeout=300s deployment/in
 run_command "kubectl wait --for=condition=complete --timeout=120s job/ingress-nginx-admission-create -n default" "Waiting for admission-create job"
 run_command "kubectl wait --for=condition=complete --timeout=120s job/ingress-nginx-admission-patch -n default" "Waiting for admission-patch job"
 
+# Generate and create TLS certificate for ingress-nginx-admission
+echo -e "${YELLOW}Generating TLS certificate for ingress-nginx-admission${NC}"
+echo "----------------------------------------"
+
+run_command "kubectl delete secret ingress-nginx-admission -n default --ignore-not-found" "Deleting existing ingress-nginx-admission secret"
+
+run_command "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj '/CN=ingress-nginx-admission/O=ingress-nginx-admission'" "Generating TLS certificate"
+
+run_command "kubectl create secret tls ingress-nginx-admission --cert=tls.crt --key=tls.key -n default" "Creating ingress-nginx-admission TLS secret"
+
+run_command "kubectl rollout restart deployment ingress-nginx-controller -n default" "Restarting ingress-nginx-controller deployment"
+
+# Clean up temporary certificate files
+run_command "rm -f tls.key tls.crt" "Cleaning up temporary certificate files"
+
 # Now deploy the dev ingress
+# Wait for admission webhook jobs to complete
+run_command "kubectl wait --for=condition=complete --timeout=220s job/ingress-nginx-admission-create -n default" "Waiting for admission-create job"
+run_command "kubectl wait --for=condition=complete --timeout=220s job/ingress-nginx-admission-patch -n default" "Waiting for admission-patch job"
+
 run_command "kubectl apply -f dev-ingress.yml" "Deploying dev ingress"
 
 # Step 5: Trigger Critical Jenkins Jobs First (One by One)
