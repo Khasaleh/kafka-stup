@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: fazeal-business-management
-          image: khsaleh889/fazeal-business-management:v1.2.3
+          image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: cron-jobs
-          image: khsaleh889/cron-jobs:v1.2.3
+          image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8011

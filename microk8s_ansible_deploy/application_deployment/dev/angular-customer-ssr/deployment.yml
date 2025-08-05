@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: angular-customer-ssr
-          image: khsaleh889/angular-customer-ssr:v1.2.3
+          image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082

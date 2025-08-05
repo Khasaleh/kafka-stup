@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: chat-app
-          image: khsaleh889/chat-app:v1.2.3
+          image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
