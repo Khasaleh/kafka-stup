@@ -161,9 +161,21 @@ for service_dir in $SERVICE_DIRS; do
     echo ""
 done
 
-# Step 4: Deploy Ingress
-echo -e "${BLUE}Step 4: Deploying Ingress${NC}"
+# Step 4: Deploy Ingress-Nginx Setup and Dev Ingress
+echo -e "${BLUE}Step 4: Deploying Ingress-Nginx Setup and Dev Ingress${NC}"
 echo "=========================================="
+
+# Deploy Ingress-Nginx Setup first
+run_command "kubectl apply -f ingress-nginx-setup.yml" "Deploying ingress-nginx setup"
+
+# Wait for Ingress-Nginx to be ready
+run_command "kubectl wait --for=condition=available --timeout=300s deployment/ingress-nginx-controller -n default" "Waiting for ingress-nginx-controller"
+
+# Wait for admission webhook jobs to complete
+run_command "kubectl wait --for=condition=complete --timeout=120s job/ingress-nginx-admission-create -n default" "Waiting for admission-create job"
+run_command "kubectl wait --for=condition=complete --timeout=120s job/ingress-nginx-admission-patch -n default" "Waiting for admission-patch job"
+
+# Now deploy the dev ingress
 run_command "kubectl apply -f dev-ingress.yml" "Deploying dev ingress"
 
 # Step 5: Trigger Critical Jenkins Jobs First (One by One)
