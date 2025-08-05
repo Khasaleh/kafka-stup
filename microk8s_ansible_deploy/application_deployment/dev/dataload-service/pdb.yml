@@ -3,10 +3,10 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: dataload-service-pdb
+  namespace: default
   labels:
     app: dataload-service
-    component: pdb
-    service: fastapi
+    component: fastapi
 spec:
   minAvailable: 1
   selector:
@@ -18,11 +18,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: dataload-service-celery-pdb
+  name: dataload-celery-pdb
+  namespace: default
   labels:
     app: dataload-service
-    component: pdb
-    service: celery
+    component: celery
 spec:
   minAvailable: 1
   selector:

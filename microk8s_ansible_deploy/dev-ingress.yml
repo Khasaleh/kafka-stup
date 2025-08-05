@@ -16,19 +16,6 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    # Blog (if exists in dev)
-    - host: dev-blog.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: wordpress
-                port:
-                  number: 80
-    
-    # API Gateway - Main entry point
     - host: dev-kube.fazeal.com
       http:
         paths:
@@ -199,7 +186,6 @@ spec:
                 name: promotion-service
                 port:
                   number: 80
-  
     - host: dev-elastic.fazeal.com
       http:
         paths:
@@ -220,7 +206,6 @@ spec:
                 name: kibana
                 port:
                   number: 5601
- 
     - host: dev-search.fazeal.com
       http:
         paths:
@@ -231,7 +216,6 @@ spec:
                 name: search-service
                 port:
                   number: 9090
-    
     - host: dev-employees.fazeal.com
       http:
         paths:
@@ -242,7 +226,6 @@ spec:
                 name: angular-employees
                 port:
                   number: 8183
-  
     - host: dev-kube-employees.fazeal.com
       http:
         paths:
@@ -253,7 +236,6 @@ spec:
                 name: employees-service
                 port:
                   number: 80
-    
     - host: dev-dataload.fazeal.com
       http:
         paths:
@@ -264,162 +246,6 @@ spec:
                 name: dataload-service
                 port:
                   number: 80
-
-    - host: dev-album.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: album-service
-                port:
-                  number: 80
-
-    - host: dev-shopping.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: shopping-service
-                port:
-                  number: 80
-    
-    - host: dev-order.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: order-service
-                port:
-                  number: 80
-    
-    - host: dev-catalog.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: catalog-service
-                port:
-                  number: 80
-    
-    - host: dev-inventory.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: inventory-service
-                port:
-                  number: 80
-    
-    - host: dev-loyalty.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: loyalty-service
-                port:
-                  number: 80
-    
-    - host: dev-notification.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: notification-service
-                port:
-                  number: 80
-    
-    - host: dev-events.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: events-service
-                port:
-                  number: 80
-    
-    - host: dev-site-management.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: site-management-service
-                port:
-                  number: 80
-    
-    - host: dev-payment-gateway.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: payment-gateway
-                port:
-                  number: 80
-    
-    - host: dev-payment-service.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: payment-service
-                port:
-                  number: 80
-     
-    - host: dev-fazeal-business.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: fazeal-business
-                port:
-                  number: 80
-    
-    - host: dev-fazeal-logistics.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: fazeal-logistics
-                port:
-                  number: 80
-    
-    - host: dev-watermark.fazeal.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: watermark-detection
-                port:
-                  number: 80
-    
-
     - host: '*.dev.fazeal.com'
       http:
         paths:
@@ -430,8 +256,6 @@ spec:
                 name: angular-customer
                 port:
                   number: 8082
-    
-
     - http:
         paths:
           - path: /
