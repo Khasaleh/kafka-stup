@@ -6,7 +6,19 @@ metadata:
   labels:
     app: catalog-service
 data:
-  SERVICE_NAME: "catalog-service"
-  NAMESPACE: "default"
-  ENVIRONMENT: "dev"
-  LOG_LEVEL: "INFO"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  chirps-create-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_doc"
+  chirps-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_delete_by_query"
+  chirps-search-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_search"
+  CONFIG_URL: "http://config-server"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  eureka.instance.ip-address: "catalog-service"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  order-service-api.base: "http://order-service:80/api/v1"
+  fazeal-business-admin-service-api.base: "http://fazeal-business:80"
