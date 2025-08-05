@@ -22,13 +22,6 @@ spec:
           ports:
             - containerPort: 3002
               name: http
-          env:
-            - name: SERVICE_NAME
-              value: "business-chat"
-            - name: NAMESPACE
-              value: "default"
-            - name: SPRING_PROFILES_ACTIVE
-              value: "dev"
           envFrom:
             - configMapRef:
                 name: business-chat-config

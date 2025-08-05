@@ -22,15 +22,6 @@ spec:
           ports:
             - containerPort: 8097
               name: http
-          env:
-            - name: SERVICE_NAME
-              value: "payment-gateway"
-            - name: NAMESPACE
-              value: "default"
-            - name: PORT
-              value: "8097"
-            - name: SPRING_PROFILES_ACTIVE
-              value: "dev"
           envFrom:
             - configMapRef:
                 name: payment-gateway-config

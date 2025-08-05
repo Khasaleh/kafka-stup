@@ -176,24 +176,27 @@ run_command "kubectl wait --for=condition=complete --timeout=120s job/ingress-ng
 run_command "kubectl wait --for=condition=complete --timeout=120s job/ingress-nginx-admission-patch -n default" "Waiting for admission-patch job"
 
 # Generate and create TLS certificate for ingress-nginx-admission
-echo -e "${YELLOW}Generating TLS certificate for ingress-nginx-admission${NC}"
-echo "----------------------------------------"
+# 1. Delete old webhook configuration
+kubectl delete validatingwebhookconfiguration ingress-nginx-admission --ignore-not-found
 
-run_command "kubectl delete secret ingress-nginx-admission -n default --ignore-not-found" "Deleting existing ingress-nginx-admission secret"
+# 2. Recreate TLS secret for webhook
+kubectl delete secret ingress-nginx-admission -n default --ignore-not-found
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout tls.key -out tls.crt \
+  -subj "/CN=ingress-nginx-admission/O=ingress-nginx-admission"
+kubectl create secret tls ingress-nginx-admission \
+  --cert=tls.crt \
+  --key=tls.key \
+  -n default
 
-run_command "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj '/CN=ingress-nginx-admission/O=ingress-nginx-admission'" "Generating TLS certificate"
+# 3. Restart the ingress controller
+kubectl rollout restart deployment ingress-nginx-controller -n default
 
-run_command "kubectl create secret tls ingress-nginx-admission --cert=tls.crt --key=tls.key -n default" "Creating ingress-nginx-admission TLS secret"
+echo "1 minute the make sure all is running"
 
-run_command "kubectl rollout restart deployment ingress-nginx-controller -n default" "Restarting ingress-nginx-controller deployment"
+sleep 60
 
-# Clean up temporary certificate files
-run_command "rm -f tls.key tls.crt" "Cleaning up temporary certificate files"
-
-# Now deploy the dev ingress
-# Wait for admission webhook jobs to complete
-run_command "kubectl wait --for=condition=complete --timeout=220s job/ingress-nginx-admission-create -n default" "Waiting for admission-create job"
-run_command "kubectl wait --for=condition=complete --timeout=220s job/ingress-nginx-admission-patch -n default" "Waiting for admission-patch job"
+echo "Continuing after now"
 
 run_command "kubectl apply -f dev-ingress.yml" "Deploying dev ingress"
 

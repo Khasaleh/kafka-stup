@@ -22,15 +22,6 @@ spec:
           ports:
             - containerPort: 4000
               name: http
-          env:
-            - name: SERVICE_NAME
-              value: "angular-dev"
-            - name: NAMESPACE
-              value: "default"
-            - name: PORT
-              value: "4000"
-            - name: SPRING_PROFILES_ACTIVE
-              value: "dev"
           envFrom:
             - configMapRef:
                 name: angular-dev-config

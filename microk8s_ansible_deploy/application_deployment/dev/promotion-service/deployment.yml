@@ -22,15 +22,6 @@ spec:
           ports:
             - containerPort: 8100
               name: http
-          env:
-            - name: SERVICE_NAME
-              value: "promotion-service"
-            - name: NAMESPACE
-              value: "default"
-            - name: PORT
-              value: "8100"
-            - name: SPRING_PROFILES_ACTIVE
-              value: "dev"
           envFrom:
             - configMapRef:
                 name: promotion-service-config
