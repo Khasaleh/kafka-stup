@@ -1,41 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fazeal-business-management
+  name: fazeal-business
   namespace: default
   labels:
-    app: fazeal-business-management
+    app: fazeal-business
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fazeal-business-management
+      app: fazeal-business
   template:
     metadata:
       labels:
-        app: fazeal-business-management
+        app: fazeal-business
     spec:
       containers:
-        - name: fazeal-business-management
+        - name: fazeal-business
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 8006
               name: http
           env:
             - name: SERVICE_NAME
-              value: "fazeal-business-management"
+              value: "fazeal-business"
             - name: NAMESPACE
               value: "default"
             - name: PORT
-              value: "8091"
+              value: "8006"
             - name: SPRING_PROFILES_ACTIVE
               value: "dev"
           envFrom:
             - configMapRef:
-                name: fazeal-business-management-config
+                name: fazeal-business-config
             - secretRef:
-                name: fazeal-business-management-secret
+                name: fazeal-business-secret
           resources:
             requests:
               memory: "512Mi"
@@ -46,7 +46,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 80
+              port: 8006       
             initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
@@ -54,10 +54,10 @@ spec:
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 80
+              port: 8006        
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
-          imagePullSecrets:
-            - name: dockerhub-secret
+      imagePullSecrets:
+        - name: dockerhub-secret
