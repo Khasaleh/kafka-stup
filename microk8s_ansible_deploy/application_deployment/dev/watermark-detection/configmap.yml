@@ -10,3 +10,4 @@ data:
   NAMESPACE: "default"
   ENVIRONMENT: "dev"
   LOG_LEVEL: "INFO"
+  eureka.instance.ip-address: "watermark-detection"

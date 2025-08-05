@@ -20,7 +20,7 @@ spec:
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 4205
+            - containerPort: 8183
               name: http
           env:
             - name: SERVICE_NAME
@@ -28,7 +28,7 @@ spec:
             - name: NAMESPACE
               value: "default"
             - name: PORT
-              value: "4205"
+              value: "8183"
             - name: SPRING_PROFILES_ACTIVE
               value: "dev"
           envFrom:
@@ -46,7 +46,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 4205
+              port: 8183
             initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
@@ -54,7 +54,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 4205
+              port: 8183
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
