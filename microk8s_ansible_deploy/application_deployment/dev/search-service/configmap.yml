@@ -10,7 +10,7 @@ data:
   NAMESPACE: "default"
   ENVIRONMENT: "dev"
   LOG_LEVEL: "INFO"
-  DISCOVERY_URL: "http://192.168.1.211:8761"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
   spring.profiles.active: "dev"
   CONFIG_URL: "http://config-server"
   elasticsearch.host: "elasticsearch-1736162529-master-hl.default.svc.cluster.local"

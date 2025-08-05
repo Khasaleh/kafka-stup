@@ -229,7 +229,7 @@ volumeMounts:
 ```yaml
 env:
   - name: DISCOVERY_URL
-    value: "http://192.168.1.211:8761"
+    value: "http://192.168.1.212:8761"
   - name: SPRING_PROFILES_ACTIVE
     value: "dev"
   - name: CONFIG_URL

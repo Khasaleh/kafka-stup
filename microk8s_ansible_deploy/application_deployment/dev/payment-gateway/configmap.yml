@@ -11,7 +11,7 @@ data:
   ENVIRONMENT: "dev"
   LOG_LEVEL: "INFO"
   DB_HOST: "192.168.1.213"
-  DISCOVERY_URL: "http://192.168.1.211:8761"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
   spring.profiles.active: "dev"
   CONFIG_URL: "http://config-server"
   amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"

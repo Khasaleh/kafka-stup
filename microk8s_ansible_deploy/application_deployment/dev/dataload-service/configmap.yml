@@ -7,12 +7,12 @@ metadata:
 data:
   PROJECT_NAME: "Catalog Data Load Service K8s"
   API_PREFIX: "/graphql"
-  ENVIRONMENT: "stage"
+  ENVIRONMENT: "dev"
   LOG_LEVEL: "DEBUG"
   RELOAD: "False"
 
   DB_DRIVER: "postgresql+psycopg2"
-  DB_HOST: "192.168.1.222"
+  DB_HOST: "192.168.1.213"
   DB_PORT: "5432"
   DB_NAME: "catalog_management"
   DB_NAME2: "fazealbusiness"
@@ -26,7 +26,7 @@ data:
   JWT_ALGORITHM: "HS512"
   ACCESS_TOKEN_EXPIRE_MINUTES: "30"
 
-  REDIS_HOST: "192.168.1.245"
+  REDIS_HOST: "192.168.1.217"
   REDIS_PORT: "6379"
   REDIS_DB_ID_MAPPING: "1"
   CELERY_BROKER_DB_NUMBER: "0"
