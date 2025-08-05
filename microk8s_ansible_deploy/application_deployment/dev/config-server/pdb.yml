@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: config-server-pdb
+  labels:
+    app: config-server
+    component: pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: config-server

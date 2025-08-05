@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cron-jobs
+  namespace: default
+  labels:
+    app: cron-jobs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cron-jobs
+  template:
+    metadata:
+      labels:
+        app: cron-jobs
+    spec:
+      containers:
+        - name: cron-jobs
+          image: khsaleh889/cron-jobs:v1.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8011
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "cron-jobs"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "8011"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: cron-jobs-config
+            - secretRef:
+                name: cron-jobs-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8011
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8011
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

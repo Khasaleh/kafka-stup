@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ads-service
+  namespace: default
+  labels:
+    app: ads-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ads-service
+  template:
+    metadata:
+      labels:
+        app: ads-service
+    spec:
+      containers:
+        - name: ads-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "ads-service"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "8082"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: ads-service-config
+            - secretRef:
+                name: ads-service-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: album-service-cm
+  namespace: default
+data:
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  spring.batch.job.enabled: "false"
+  eureka.instance.ip-address: "album-service"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.kafka.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  fazeal-social-service-api.base: "http://api-server:80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-service-config
+  namespace: default
+  labels:
+    app: catalog-service
+data:
+  SERVICE_NAME: "catalog-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"

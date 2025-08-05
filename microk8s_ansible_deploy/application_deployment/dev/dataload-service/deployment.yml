@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataload-service
+  namespace: default
+  labels:
+    app: dataload-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+  template:
+    metadata:
+      labels:
+        app: dataload-service
+    spec:
+      containers:
+        - name: dataload-service
+          image: khsaleh889/dataload-service:v1.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8106
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "dataload-service"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "8106"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: dataload-service-config
+            - secretRef:
+                name: dataload-service-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8106
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8106
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

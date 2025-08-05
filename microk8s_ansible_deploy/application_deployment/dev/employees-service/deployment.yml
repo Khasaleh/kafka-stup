@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employees-service
+  namespace: default
+  labels:
+    app: employees-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employees-service
+  template:
+    metadata:
+      labels:
+        app: employees-service
+    spec:
+      containers:
+        - name: employees-service
+          image: khsaleh889/employees-service:v1.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "employees-service"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "8088"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: employees-service-config
+            - secretRef:
+                name: employees-service-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8088
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8088
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

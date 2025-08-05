@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ads-service-cm
+  namespace: default
+data:
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  spring.batch.job.enabled: "false"
+  eureka.instance.ip-address: "ads-service"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  user-notification-service-api.base: "http://notification-service:80"
+  album-api.base: "http://album-service:80"
+  fazeal-business-admin-service-api.base: "http://fazeal-business:80"

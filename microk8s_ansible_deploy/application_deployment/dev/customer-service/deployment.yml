@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: default
+  labels:
+    app: customer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      containers:
+        - name: customer-service
+          image: khsaleh889/customer-service:v1.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8087
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "customer-service"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "8087"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: customer-service-config
+            - secretRef:
+                name: customer-service-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8087
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8087
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

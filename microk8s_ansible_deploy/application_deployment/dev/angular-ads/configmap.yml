@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-ads-config
+  namespace: default
+  labels:
+    app: angular-ads
+data:
+  SERVICE_NAME: "angular-ads"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"

@@ -1,0 +1,177 @@
+---
+- name: Deploy All Services from Application Deployment Files
+  hosts: local
+  gather_facts: false
+  vars:
+    env: "{{ env | default('dev') }}"
+
+  pre_tasks:
+    - name: Ensure environment variable is defined
+      fail:
+        msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
+      when: env is not defined
+
+  tasks:
+    - name: Deploy ConfigMap for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item }}/configmap.yml"
+        kubeconfig: "~/.kube/config"
+      loop:
+        - config-server
+        - api-server
+        - site-management-service
+        - shopping-service
+        - posts-service
+        - payment-gateway
+        - order-service
+        - notification-service
+        - loyalty-service
+        - inventory-service
+        - fazeal-business-management
+        - fazeal-business
+        - events-service
+        - angular-customer-ssr
+        - cron-jobs
+        - chat-app
+        - business-chat
+        - api-gateway
+        - angular-dev
+        - angular-customer
+        - angular-business
+        - angular-ads
+        - angular-employee
+        - album-service
+        - ads-service
+        - promotion-service
+        - catalog-service
+        - customer-service
+        - employees-service
+        - payment-service
+        - translation-service
+        - watermark-detection
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Secret for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item }}/secret.yml"
+        kubeconfig: "~/.kube/config"
+      loop:
+        - config-server
+        - api-server
+        - site-management-service
+        - shopping-service
+        - posts-service
+        - payment-gateway
+        - order-service
+        - notification-service
+        - loyalty-service
+        - inventory-service
+        - fazeal-business-management
+        - fazeal-business
+        - events-service
+        - angular-customer-ssr
+        - cron-jobs
+        - chat-app
+        - business-chat
+        - api-gateway
+        - angular-dev
+        - angular-customer
+        - angular-business
+        - angular-ads
+        - angular-employee
+        - album-service
+        - ads-service
+        - promotion-service
+        - catalog-service
+        - customer-service
+        - employees-service
+        - payment-service
+        - translation-service
+        - watermark-detection
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Service for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item }}/service.yml"
+        kubeconfig: "~/.kube/config"
+      loop:
+        - config-server
+        - api-server
+        - site-management-service
+        - shopping-service
+        - posts-service
+        - payment-gateway
+        - order-service
+        - notification-service
+        - loyalty-service
+        - inventory-service
+        - fazeal-business-management
+        - fazeal-business
+        - events-service
+        - angular-customer-ssr
+        - cron-jobs
+        - chat-app
+        - business-chat
+        - api-gateway
+        - angular-dev
+        - angular-customer
+        - angular-business
+        - angular-ads
+        - angular-employee
+        - album-service
+        - ads-service
+        - promotion-service
+        - catalog-service
+        - customer-service
+        - employees-service
+        - payment-service
+        - translation-service
+        - watermark-detection
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Deployment for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item }}/deployment.yml"
+        kubeconfig: "~/.kube/config"
+      loop:
+        - config-server
+        - api-server
+        - site-management-service
+        - shopping-service
+        - posts-service
+        - payment-gateway
+        - order-service
+        - notification-service
+        - loyalty-service
+        - inventory-service
+        - fazeal-business-management
+        - fazeal-business
+        - events-service
+        - angular-customer-ssr
+        - cron-jobs
+        - chat-app
+        - business-chat
+        - api-gateway
+        - angular-dev
+        - angular-customer
+        - angular-business
+        - angular-ads
+        - angular-employee
+        - album-service
+        - ads-service
+        - promotion-service
+        - catalog-service
+        - customer-service
+        - employees-service
+        - payment-service
+        - translation-service
+        - watermark-detection
+      delegate_to: localhost
+      run_once: true 

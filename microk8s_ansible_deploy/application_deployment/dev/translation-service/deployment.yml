@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: translation-service
+  namespace: default
+  labels:
+    app: translation-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: translation-service
+  template:
+    metadata:
+      labels:
+        app: translation-service
+    spec:
+      containers:
+        - name: translation-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8104
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "translation-service"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "8104"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: translation-service-config
+            - secretRef:
+                name: translation-service-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

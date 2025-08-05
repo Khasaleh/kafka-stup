@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: angular-dev
+  namespace: default
+  labels:
+    app: angular-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: angular-dev
+  template:
+    metadata:
+      labels:
+        app: angular-dev
+    spec:
+      containers:
+        - name: angular-dev
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "angular-dev"
+            - name: NAMESPACE
+              value: "default"
+            - name: PORT
+              value: "4000"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          envFrom:
+            - configMapRef:
+                name: angular-dev-config
+            - secretRef:
+                name: angular-dev-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          imagePullSecrets:
+            - name: dockerhub-secret

@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fazeal-business-config
+  namespace: default
+  labels:
+    app: fazeal-business
+data:
+  SERVICE_NAME: "fazeal-business"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  spring.profiles.active: "dev"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  BUSINESS_DB_HOST: "192.168.1.213"
+  HOST_NAME: "http://fazeal-business:80"
+  album-api.base: "http://album-service:80"
+  album-api.name: "album-api-client"
+  eureka.instance.ip-address: "fazeal-business"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  CONFIG_URL: "http://config-server"
+  promotion-service-api.base: "http://promotion-service:80/api/v1"
+  order-service-api.base: "http://order-service:80/api/v1"
+  payment-service-api.base: "http://payment-service:80"
+  user-notification-service-api.base: "http://notification-service:80"
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
+  fazeal-business-admin-management-service-api.base: "http://fazeal-business-management:80"
+  restaurant-service-api.base: "http://restaurant-catalog-service:80"
+  reservation-service-api.base: "http://restaurant-reservation-service:80/api/v1"
+  loyalty-service-api.base: "http://loyalty-service:80"
+  customer-service-api.base: "http://customer-service:80"
+  site-management-service-api.base: "http://site-management-service:80/api/v1"
+  inventory-service-api.base: "http://inventory-service:80/api/v1"
+  catalog-service-api.base: "http://catalog-service:80/api/v1"
+  stripe-payment-service-api.base: "http://payment-service:80/api/v1/stripepayments"
+  paypal-payment-service-api.base: "http://payment-service:80/api/v1/paypalpayments"
+  chirps-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_delete_by_query"
+  chirps-create-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_doc"
+  chirps-search-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_search"
+  fazeal-social-service-api.base: "http://api-server:80"

@@ -7,6 +7,11 @@
       fail:
         msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
       when: env is not defined
+    
+    - name: Set deployment mode
+      set_fact:
+        use_refactored_config: "{{ use_refactored_config | default(false) }}"
+      when: use_refactored_config is not defined
 
 - import_playbook: deploy-elastic-stack.yml
 - import_playbook: deploy-ingress.yml
@@ -21,6 +26,7 @@
     - "cluster_vars/{{ env }}.yml"
     - "group_vars/{{ env }}/main.yml"
     - vars/services.yml
+    - vars/service_configs.yml
     - group_vars/all/main.yml
     - group_vars/all/vault.yml
 

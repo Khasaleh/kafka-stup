@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-employee-config
+  namespace: default
+  labels:
+    app: angular-employee
+data:
+  SERVICE_NAME: "angular-employee"

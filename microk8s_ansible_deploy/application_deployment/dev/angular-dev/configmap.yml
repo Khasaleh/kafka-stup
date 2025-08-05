@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-dev-config
+  namespace: default
+  labels:
+    app: angular-dev
+data:
+  SERVICE_NAME: "angular-dev"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  NGINX_PORT: "8080"

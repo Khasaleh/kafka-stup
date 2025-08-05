@@ -1,0 +1,61 @@
+---
+- name: Deploy Generated Service Manifests
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - "cluster_vars/{{ env }}.yml"
+    - "group_vars/{{ env }}/main.yml"
+    - vars/services.yml
+    - group_vars/all/main.yml
+    - group_vars/all/vault.yml
+
+  pre_tasks:
+    - name: Ensure environment variable is defined
+      fail:
+        msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
+      when: env is not defined
+
+  tasks:
+    - name: Deploy ConfigMap for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/configmap.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Secret for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/secret.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Service for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/service.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Deployment for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/deployment.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true 

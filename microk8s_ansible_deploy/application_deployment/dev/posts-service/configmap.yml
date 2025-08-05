@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: posts-service-config
+  namespace: default
+  labels:
+    app: posts-service
+data:
+  SERVICE_NAME: "posts-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DB_HOST: "192.168.1.213"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  video-api.base: "http://album-service:80"
+  image-api.base: "http://album-service:80"
+  album-api.base: "http://album-service:80"
+  fazeal-social-service-api.base: "http://api-server:80"
+  user-notification-service-api.base: "http://notification-service:80"
+  eureka.instance.ip-address: "posts-service"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: employees-service-config
+  namespace: default
+  labels:
+    app: employees-service
+data:
+  SERVICE_NAME: "employees-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"

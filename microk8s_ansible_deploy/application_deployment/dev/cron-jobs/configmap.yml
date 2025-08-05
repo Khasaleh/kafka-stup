@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cron-jobs-config
+  namespace: default
+  labels:
+    app: cron-jobs
+data:
+  SERVICE_NAME: "cron-jobs"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DB_HOST: "192.168.1.213"
+  spring.profiles.active: "dev"
+  loyalty-service-api.base: "http://loyalty-service:80"
+  events-api.base: "http://events-service:80"
+  posts-service.base: "http://posts-service:80"
+  fazeal-business-admin-service-api.base: "http://fazeal-business:80"
+

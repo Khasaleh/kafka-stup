@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: watermark-detection-config
+  namespace: default
+  labels:
+    app: watermark-detection
+data:
+  SERVICE_NAME: "watermark-detection"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"

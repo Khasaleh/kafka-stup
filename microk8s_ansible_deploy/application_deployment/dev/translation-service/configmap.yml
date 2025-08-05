@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: translation-service-config
+  namespace: default
+  labels:
+    app: translation-service
+data:
+  SERVICE_NAME: "translation-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"

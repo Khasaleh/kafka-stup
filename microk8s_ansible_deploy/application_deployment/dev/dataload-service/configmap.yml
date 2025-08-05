@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dataload-service-config
+  namespace: default
+  labels:
+    app: dataload-service
+data:
+  SERVICE_NAME: "dataload-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"

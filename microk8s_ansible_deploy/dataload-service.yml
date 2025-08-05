@@ -1,0 +1,189 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: uploads-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /data/uploads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dataload-service-config
+data:
+  # Add your configuration data here
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "dev"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dataload-service-secrets
+type: Opaque
+data:
+  # Add your secret data here (base64 encoded)
+  # Example: DATABASE_PASSWORD: <base64-encoded-password>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataload-service
+  labels:
+    app: dataload-service
+    component: fastapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+      component: fastapi
+  template:
+    metadata:
+      labels:
+        app: dataload-service
+        component: fastapi
+    spec:
+      volumes:
+        - name: uploads-storage
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+      containers:
+        - name: dataload-service
+          image: khsaleh889/familymicroservices:${IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: dataload-service-config
+            - secretRef:
+                name: dataload-service-secrets
+          env:
+            - name: DISCOVERY_URL
+              value: "http://192.168.1.211:8761"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+            - name: CONFIG_URL
+              value: "http://config-server"
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: /data/uploads
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 25
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      imagePullSecrets:
+        - name: dockerhub-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataload-service
+  labels:
+    app: dataload-service
+    component: fastapi
+spec:
+  type: ClusterIP
+  selector:
+    app: dataload-service
+    component: fastapi
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataload-service-celery-worker
+  labels:
+    app: dataload-service
+    component: celery-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+      component: celery-worker
+  template:
+    metadata:
+      labels:
+        app: dataload-service
+        component: celery-worker
+    spec:
+      volumes:
+        - name: uploads-storage
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+      containers:
+        - name: celery-worker-container
+          image: khsaleh889/familymicroservices:${IMAGE_TAG}
+          imagePullPolicy: Always
+          command: ["celery"]
+          args:
+            - "-A"
+            - "app.tasks.celery_worker.celery_app"
+            - "worker"
+            - "-l"
+            - "INFO"
+          envFrom:
+            - configMapRef:
+                name: dataload-service-config
+            - secretRef:
+                name: dataload-service-secrets
+          env:
+            - name: DISCOVERY_URL
+              value: "http://192.168.1.211:8761"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+            - name: CONFIG_URL
+              value: "http://config-server"
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: /data/uploads
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+      imagePullSecrets:
+        - name: dockerhub-secret 
