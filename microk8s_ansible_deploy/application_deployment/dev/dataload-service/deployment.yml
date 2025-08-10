@@ -15,43 +15,64 @@ spec:
       labels:
         app: dataload-service
     spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
       containers:
         - name: dataload-service
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8106
-              name: http
+            - name: http
+              containerPort: 8000
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: dataload-service-config
             - secretRef:
                 name: dataload-service-secrets
+          # Ensure these two are definitely present/overriding defaults
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: dataload-service-config
+                  key: ENVIRONMENT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dataload-service-secrets
+                  key: JWT_SECRET
           resources:
             requests:
-              memory: "512Mi"
               cpu: "250m"
+              memory: "512Mi"
             limits:
-              memory: "1Gi"
               cpu: "500m"
-          livenessProbe:
+              memory: "1Gi"
+          startupProbe:
             httpGet:
               path: /health
-              port: 8106
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
+              port: 8000
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /health
-              port: 8106
-            initialDelaySeconds: 30
+              port: 8000
+            initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-      imagePullSecrets:
-        - name: dockerhub-secret
+
 ---
 apiVersion: apps/v1
 kind: Deployment

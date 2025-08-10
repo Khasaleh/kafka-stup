@@ -6,49 +6,161 @@ metadata:
   labels:
     app: catalog-service
 spec:
-  replicas: 1
+  replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: catalog-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: catalog-service
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
       containers:
         - name: catalog-service
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8084
-              name: http
-          envFrom:
-            - configMapRef:
-                name: catalog-service-config
-            - secretRef:
-                name: catalog-service-secret
+          env:
+            - name: SERVICE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: SERVICE_NAME
+            - name: DISCOVERY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: DISCOVERY_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: DB_HOST
+            - name: spring.profiles.active
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: spring.profiles.active
+            - name: CONFIG_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: CONFIG_URL
+            - name: amazonProperties.endpointUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: amazonProperties.endpointUrl
+            - name: amazonProperties.bucketName
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: amazonProperties.bucketName
+            - name: amazonProperties.assetsBucketName
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: amazonProperties.assetsBucketName
+            - name: eureka.instance.ip-address
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: eureka.instance.ip-address
+            - name: eureka.instance.prefer-ip-address
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: eureka.instance.prefer-ip-address
+            - name: server.port
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: server.port
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: REDIS_PORT
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: DB_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: REDIS_PASSWORD
+            - name: amazonProperties.accessKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.accessKey
+            - name: amazonProperties.secretKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.secretKey
+            - name: amazonProperties.assetsAccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.assetsAccessKey
+            - name: amazonProperties.assetsSecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.assetsSecretKey
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: AWS_SECRET_KEY
+          livenessProbe:
+            tcpSocket:
+              port: 8084
+            initialDelaySeconds: 180
+            periodSeconds: 15
+            failureThreshold: 6
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 8084
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 2
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
               cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8084
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8084
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-      imagePullSecrets:
-        - name: dockerhub-secret
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"

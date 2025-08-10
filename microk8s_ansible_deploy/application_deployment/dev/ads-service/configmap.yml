@@ -15,3 +15,4 @@ data:
   user-notification-service-api.base: "http://notification-service:80"
   album-api.base: "http://album-service:80"
   fazeal-business-admin-service-api.base: "http://fazeal-business:80"
+  DB_HOST: "192.168.1.213"

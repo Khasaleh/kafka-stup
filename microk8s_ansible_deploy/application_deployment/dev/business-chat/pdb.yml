@@ -2,6 +2,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: business-chat-pdb
+  namespace: default
   labels:
     app: business-chat
     component: pdb

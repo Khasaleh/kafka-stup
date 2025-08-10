@@ -1,0 +1,218 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chat-app-config
+  namespace: default
+  labels:
+    app: chat-app
+data:
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  HOSTNAME: "chat-app"
+  PORT: "3000"
+  EUREKA_HOST: "192.168.1.212"
+  EUREKA_PORT: "8761"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chat-app-secret
+  namespace: default
+  labels:
+    app: chat-app
+type: Opaque
+data:
+  SERVICE_NAME: "Y2hhdC1hcHA=" # base64(chat-app)
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-app
+  namespace: default
+  labels:
+    app: chat-app
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: chat-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: chat-app
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: chat-app
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: NAMESPACE
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: ENVIRONMENT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: LOG_LEVEL
+            - name: HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: HOSTNAME
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: PORT
+            - name: EUREKA_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: EUREKA_HOST
+            - name: EUREKA_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: EUREKA_PORT
+            - name: SERVICE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: chat-app-secret
+                  key: SERVICE_NAME
+          startupProbe:
+            tcpSocket:
+              port: 3000
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-app
+  namespace: default
+  labels:
+    app: chat-app
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app: chat-app
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chat-app-hpa
+  namespace: default
+  labels:
+    app: chat-app
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chat-app
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: chat-app-pdb
+  namespace: default
+  labels:
+    app: chat-app
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: chat-app

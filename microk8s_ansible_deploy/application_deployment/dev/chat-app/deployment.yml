@@ -6,58 +6,99 @@ metadata:
   labels:
     app: chat-app
 spec:
-  replicas: 1
+  replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: chat-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: chat-app
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
       containers:
         - name: chat-app
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
-              name: http
+            - name: http
+              containerPort: 3000
+              protocol: TCP
           env:
-            - name: SERVICE_NAME
-              value: "chat-app"
             - name: NAMESPACE
-              value: "default"
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: NAMESPACE
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: ENVIRONMENT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: LOG_LEVEL
+            - name: HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: HOSTNAME
             - name: PORT
-              value: "3000"
-            - name: SPRING_PROFILES_ACTIVE
-              value: "dev"
-          envFrom:
-            - configMapRef:
-                name: chat-app-config
-            - secretRef:
-                name: chat-app-secret
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: PORT
+            - name: EUREKA_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: EUREKA_HOST
+            - name: EUREKA_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: chat-app-config
+                  key: EUREKA_PORT
+            - name: SERVICE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: chat-app-secret
+                  key: SERVICE_NAME
+          startupProbe:
+            tcpSocket:
+              port: 3000
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: 3000
             initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-      imagePullSecrets: 
-        - name: dockerhub-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"

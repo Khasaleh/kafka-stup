@@ -11,6 +11,3 @@ data:
   ENVIRONMENT: "dev"
   LOG_LEVEL: "INFO"
   NGINX_PORT: "8183"
-  
-  
-  

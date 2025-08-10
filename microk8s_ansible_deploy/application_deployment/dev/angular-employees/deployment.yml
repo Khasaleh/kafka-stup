@@ -6,22 +6,34 @@ metadata:
   labels:
     app: angular-employees
 spec:
-  replicas: 1
+  replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: angular-employees
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: angular-employees
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
       containers:
         - name: angular-employees
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8183
-              name: http
+            - name: http
+              containerPort: 8183
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: angular-employees-config
@@ -29,26 +41,31 @@ spec:
                 name: angular-employees-secret
           resources:
             requests:
-              memory: "512Mi"
               cpu: "250m"
+              memory: "512Mi"
             limits:
-              memory: "1Gi"
               cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /
+              memory: "1Gi"
+          # Wait for port to open (nginx warmup)
+          startupProbe:
+            tcpSocket:
               port: 8183
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
           readinessProbe:
             httpGet:
-              path: /
+              path: /index.html
               port: 8183
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 8183
+            initialDelaySeconds: 60
+            periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-      imagePullSecrets:
-        - name: dockerhub-secret

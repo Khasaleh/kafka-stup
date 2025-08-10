@@ -10,6 +10,7 @@ data:
   NAMESPACE: "default"
   ENVIRONMENT: "dev"
   LOG_LEVEL: "INFO"
+  server.port": "8087"
   DB_HOST: "192.168.1.213"
   DISCOVERY_URL: "http://192.168.1.212:8761"
   spring.profiles.active: "dev"
@@ -28,4 +29,3 @@ data:
   catalog-service-api.base: "http://catalog-service:80/api/v1"
   fazeal-business-admin-service-api.base: "http://fazeal-business:80"
   paypal-payment-service-api.base: "http://payment-service:80/api/v1/paypalpayments"
-

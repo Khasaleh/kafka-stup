@@ -8,9 +8,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 4204
-      targetPort: 4204
+    - name: http
+      port: 4000      
+      targetPort: 4000  
       protocol: TCP
-      name: http
   selector:
     app: angular-dev

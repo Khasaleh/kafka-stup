@@ -7,48 +7,59 @@ metadata:
     app: config-server
 spec:
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: config-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: config-server
+      annotations:
+        kubectl.kubernetes.io/restartedAt: ""
     spec:
       containers:
         - name: config-server
-          image: khsaleh889/familymicroservices:$IMAGE
-          imagePullPolicy: IfNotPresent
+          image: cybersolutioncontainer/familymicroservices:$IMAGE
+          imagePullPolicy: Always
           ports:
             - containerPort: 8888
-              name: http
-          envFrom:
-            - configMapRef:
-                name: config-server-config
-            - secretRef:
-                name: config-server-secret
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
+              name: config-server
+              protocol: TCP
+          env:
+            - name: DISCOVERY_URL
+              value: "http://192.168.1.212:8761"
+            - name: BUSINESS_MANGE_DB_HOST
+              value: "192.168.1.213"
+            - name: spring.profiles.active
+              value: "dev"
+            - name: CONFIG_USER
+              value: "Khsaleh2024"
+            - name: CONFIG_PASS
+              value: "ATBBsS3gExWYHwV4nWSjgAR3ypSW4FCC4191"
           livenessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: 8888
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
+            initialDelaySeconds: 5
+            periodSeconds: 200
+            successThreshold: 1
             failureThreshold: 3
+            timeoutSeconds: 3
           readinessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: 8888
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
+            successThreshold: 1
             failureThreshold: 3
-      imagePullSecrets:   
-        - name: dockerhub-secret
+            timeoutSeconds: 1
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: dockerhub-secret 

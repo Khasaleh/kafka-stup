@@ -6,22 +6,34 @@ metadata:
   labels:
     app: angular-dev
 spec:
-  replicas: 1
+  replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: angular-dev
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: angular-dev
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
       containers:
         - name: angular-dev
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 4000
-              name: http
+            - name: http
+              containerPort: 4000
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: angular-dev-config
@@ -29,26 +41,31 @@ spec:
                 name: angular-dev-secret
           resources:
             requests:
-              memory: "512Mi"
               cpu: "250m"
+              memory: "512Mi"
             limits:
-              memory: "1Gi"
               cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /
+              memory: "1Gi"
+          # Wait for the port to open so we don't fail during warmup
+          startupProbe:
+            tcpSocket:
               port: 4000
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60    # up to ~5 minutes
           readinessProbe:
             httpGet:
-              path: /
+              path: /index.html
               port: 4000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 4000
+            initialDelaySeconds: 60
+            periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-      imagePullSecrets:
-        - name: dockerhub-secret

@@ -6,7 +6,7 @@ metadata:
     app: customer-service
     component: pdb
 spec:
-  minAvailable: 50%
+  minAvailable: 1
   selector:
     matchLabels:
       app: customer-service

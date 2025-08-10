@@ -1,0 +1,264 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+  namespace: default
+  labels:
+    app: payment-service
+data:
+  SERVICE_NAME: "payment-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  server.port: "80"
+
+  # Discovery
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  CONFIG_URL: "http://config-server"
+
+  # Database (dev)
+  DB_HOST: "192.168.1.213"
+  DB_PORT: "5432"
+  DB_NAME: "payment-service_db"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://192.168.1.213:5432/payment_service?currentSchema=public"
+
+  # Redis (dev)
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+
+  # Upstream internal deps
+  fazeal-business-admin-service-api.base: "http://fazeal-business:80"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: payment-service-secret
+  namespace: default
+  labels:
+    app: payment-service
+type: Opaque
+data:
+  DB_USER: YWRtaW4=
+  DB_PASSWORD: bmV3MjAyNQ==
+  REDIS_PASSWORD: YWRtaW4xMjM0
+  JWT_SECRET: and0X3NlY3JldF9rZXlfZm9yX3BheW1lbnQtc2VydmljZV8yMDI0
+  API_KEY: YXBpX2tleV9wYXltZW50LXNlcnZpY2VfMjAyNA==
+  # same key as stg, base64-encoded for Secret.data
+  ENCRYPTION_SECRET_KEY: "UWRSdzBJUU8vODFhMG5udGREeC9jZ3hReWkrUllyNXdIcW43d24vNnh1cz0="
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: default
+  labels:
+    app: payment-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: payment-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: default
+  labels:
+    app: payment-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: payment-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${DB_HOST}:${DB_PORT} (Postgres)…";
+              i=0; until nc -z ${DB_HOST} ${DB_PORT}; do i=$((i+1)); if [ "$i" -ge 300 ]; then echo "Postgres still unreachable after ~10m"; exit 1; fi; sleep 2; done;
+              echo "Postgres is reachable.";
+          env:
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: payment-service-config, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { configMapKeyRef: { name: payment-service-config, key: DB_PORT } }
+
+        - name: wait-for-redis
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${REDIS_HOST}:${REDIS_PORT} (Redis)…";
+              i=0; until nc -z ${REDIS_HOST} ${REDIS_PORT}; do i=$((i+1)); if [ "$i" -ge 300 ]; then echo "Redis still unreachable after ~10m"; exit 1; fi; sleep 2; done;
+              echo "Redis is reachable.";
+          env:
+            - name: REDIS_HOST
+              valueFrom: { configMapKeyRef: { name: payment-service-config, key: REDIS_HOST } }
+            - name: REDIS_PORT
+              valueFrom: { configMapKeyRef: { name: payment-service-config, key: REDIS_PORT } }
+
+      containers:
+        - name: payment-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+          env:
+            # Basics
+            - { name: SERVICE_NAME, valueFrom: { configMapKeyRef: { name: payment-service-config, key: SERVICE_NAME } } }
+            - { name: NAMESPACE,    valueFrom: { configMapKeyRef: { name: payment-service-config, key: NAMESPACE } } }
+            - { name: ENVIRONMENT,  valueFrom: { configMapKeyRef: { name: payment-service-config, key: ENVIRONMENT } } }
+            - { name: LOG_LEVEL,    valueFrom: { configMapKeyRef: { name: payment-service-config, key: LOG_LEVEL } } }
+            - { name: server.port,  valueFrom: { configMapKeyRef: { name: payment-service-config, key: server.port } } }
+
+            # Discovery
+            - { name: DISCOVERY_URL, valueFrom: { configMapKeyRef: { name: payment-service-config, key: DISCOVERY_URL } } }
+            - { name: CONFIG_URL,    valueFrom: { configMapKeyRef: { name: payment-service-config, key: CONFIG_URL } } }
+            - { name: fazeal-business-admin-service-api.base, valueFrom: { configMapKeyRef: { name: payment-service-config, key: "fazeal-business-admin-service-api.base" } } }
+
+            # DB
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { configMapKeyRef: { name: payment-service-config, key: SPRING_DATASOURCE_URL } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: payment-service-secret, key: DB_USER } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: payment-service-secret, key: DB_PASSWORD } } }
+
+            # Redis (provide both forms so libs never fall back to localhost)
+            - { name: REDIS_HOST,   valueFrom: { configMapKeyRef: { name: payment-service-config, key: REDIS_HOST } } }
+            - { name: REDIS_PORT,   valueFrom: { configMapKeyRef: { name: payment-service-config, key: REDIS_PORT } } }
+            - { name: REDIS_PASSWORD, valueFrom: { secretKeyRef: { name: payment-service-secret, key: REDIS_PASSWORD } } }
+            - { name: SPRING_REDIS_HOST,   valueFrom: { configMapKeyRef: { name: payment-service-config, key: REDIS_HOST } } }
+            - { name: SPRING_REDIS_PORT,   valueFrom: { configMapKeyRef: { name: payment-service-config, key: REDIS_PORT } } }
+            - { name: SPRING_REDIS_PASSWORD, valueFrom: { secretKeyRef: { name: payment-service-secret, key: REDIS_PASSWORD } } }
+
+            # Auth / app secrets
+            - { name: JWT_SECRET, valueFrom: { secretKeyRef: { name: payment-service-secret, key: JWT_SECRET } } }
+            - { name: API_KEY,    valueFrom: { secretKeyRef: { name: payment-service-secret, key: API_KEY } } }
+
+            # Encryption key (same as stg)
+            - name: encryption.secret.key
+              valueFrom:
+                secretKeyRef:
+                  name: payment-service-secret
+                  key: ENCRYPTION_SECRET_KEY
+            - name: ENCRYPTION_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: payment-service-secret
+                  key: ENCRYPTION_SECRET_KEY
+
+          startupProbe:
+            tcpSocket: { port: 80 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payment-service-hpa
+  namespace: default
+  labels:
+    app: payment-service
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: payment-service-pdb
+  namespace: default
+  labels:
+    app: payment-service
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: payment-service

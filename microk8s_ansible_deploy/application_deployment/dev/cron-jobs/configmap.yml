@@ -16,4 +16,3 @@ data:
   events-api.base: "http://events-service:80"
   posts-service.base: "http://posts-service:80"
   fazeal-business-admin-service-api.base: "http://fazeal-business:80"
-

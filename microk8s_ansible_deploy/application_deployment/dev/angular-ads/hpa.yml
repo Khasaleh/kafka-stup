@@ -1,48 +1,16 @@
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
+apiVersion: v1
+kind: Service
 metadata:
-  name: angular-ads-hpa
+  name: angular-ads
+  namespace: default
   labels:
     app: angular-ads
-    component: hpa
 spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: angular-ads
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 70
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 60
-      policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 15
-      - type: Pods
-        value: 2
-        periodSeconds: 15
-      selectPolicy: Max
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      policies:
-      - type: Percent
-        value: 10
-        periodSeconds: 60
-      - type: Pods
-        value: 1
-        periodSeconds: 60
-      selectPolicy: Max
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8082           
+      targetPort: 8082      
+      protocol: TCP
+  selector:
+    app: angular-ads

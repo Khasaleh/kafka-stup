@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-server
-  namespace: default
   labels:
     app: api-server
 spec:
@@ -15,40 +14,179 @@ spec:
       labels:
         app: api-server
     spec:
-      containers:
-        - name: api-server
-          image: khsaleh889/familymicroservices:$IMAGE
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8002
-              name: http
-          envFrom:
-            - configMapRef:
-                name: api-server-config
-            - secretRef:
-                name: api-server-secret
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8002 
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8002
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
       imagePullSecrets:
-        - name: dockerhub-secret
+        - name: dockerhub-secret  # Reference to DockerHub secret for pulling images
+      containers:
+      - env:
+        - name: DISCOVERY_URL
+          value: "http://192.168.1.212:8761"
+        - name: shoppinglist-api.base
+          value: "http://shopping-service:80"
+        - name: posts-service.base
+          value: "http://posts-service:80"
+        - name: events-api.base
+          value: "http://events-service:80"
+        - name: loyalty-service-api.base
+          value: "http://loyalty-service:80"
+        - name: video-api.base
+          value: "http://album-service:80"
+        - name: image-api.base
+          value: "http://album-service:80"
+        - name: album-api.base
+          value: "http://album-service:80"
+        - name: user-notification-service-api.base
+          value: "http://notification-service:80"
+        - name: customer-service-api.base
+          value: "http://customer-service:80"
+        - name: payment-service-api.base
+          value: "http://payment-service:80"
+        - name: order-service-api.base
+          value: "http://order-service:80/api/v1"
+        - name: fazeal-logistics-api.base
+          value: "http://fazeal-logistics:80/api/v1"
+        - name: stripe-payment-service-api.base
+          value: "http://payment-service:80/api/v1/stripepayments"
+        - name: checkout-service-api.base
+          value: "http://customer-service:80/api/v1"
+        - name: site-management-service-api.base
+          value: "http://site-management-service:80/api/v1"
+        - name: paypal-payment-service-api.base
+          value: "http://payment-service:80/api/v1/paypalpayments"
+        - name: fazeal-business-admin-management-service-api.base
+          value: "http://fazeal-business-management:80"
+        - name: reservation-service-api.base
+          value: "http://restaurant-reservation-service:80/api/v1"
+        - name: catalog-service-api.base
+          value: "http://catalog-service:80/api/v1"
+        - name: amazonProperties.accessKey
+          value: "AKIA22Z7QLS6BLVB5HVD"
+        - name: amazonProperties.secretKey
+          value: "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"
+        - name: AWS_ACCESS_KEY
+          value: "AKIA22Z7QLS6BLVB5HVD"
+        - name: AWS_SECRET_KEY
+          value: "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"
+        - name: amazonProperties.bucketName
+          value: "fazeal-social-nonprod"
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: api-server-config  # Reference ConfigMap for DB_HOST
+              key: DB_HOST
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: api-server-secret  # Reference secret for DB_USER
+              key: DB_USER
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: api-server-secret  # Reference secret for DB_PASS
+              key: DB_PASS
+        - name: SPRING_PROFILES_ACTIVE
+          value: "dev"
+        - name: HOST_IP
+          value: "api-server"
+        - name: HOST_PORT
+          value: "8002"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: api-server-secret  # Reference secret for JWT_SECRET
+              key: JWT_SECRET
+        - name: eureka.instance.ip-address
+          value: "api-server"
+        - name: eureka.instance.prefer-ip-address
+          value: "true"
+        - name: server.port
+          value: "80"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: api-server-config  # Reference ConfigMap for REDIS_HOST
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: api-server-config  # Reference ConfigMap for REDIS_PORT
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: api-server-secret  # Reference secret for REDIS_PASSWORD
+              key: REDIS_PASSWORD
+        - name: spring.kafka.producer.bootstrap-servers
+          value: "192.168.1.225:29093,192.168.1.225:39093"
+        - name: spring.kafka.consumer.bootstrap-servers
+          value: "192.168.1.225:29093,192.168.1.225:39093"
+        - name: spring.cloud.stream.kafka.binder.brokers
+          value: "192.168.1.225:29093,192.168.1.225:39093"
+        - name: restaurant-service-api.base
+          value: "http://restaurant-catalog-service:80"
+        - name: promotion-service-api.base
+          value: "http://promotion-service:80/api/v1"
+        - name: chirps-delete-service.base
+          value: "https://dev-elastic.fazeal.com/fazealChirps/_delete_by_query"
+        - name: chirps-search-service.base
+          value: "https://dev-elastic.fazeal.com/fazealChirps/_search"
+        - name: family-search-service.base
+          value: "https://dev-elastic.fazeal.com/fazealGroups/_search"
+        - name: hashtag-search-service.base
+          value: "https://dev-elastic.fazeal.com/fazealHashtags/_search"
+        - name: news-search-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-news-v1/_search"
+        - name: sketch-search-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-sketch-v1/_search"
+        - name: search-service.base
+          value: "https://dev-elastic.fazeal.com/fazealUsers/_search"
+        - name: voting-delete-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_delete_by_query"
+        - name: sketch-delete-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-sket-v1/_delete_by_query"
+        - name: chirps-bulkupdate-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-chirps-v1/_update_by_query"
+        - name: chirps-create-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-chirps-v1/_doc"
+        - name: family-create-service.base
+          value: "https://dev-elastic.fazeal.com/fazealGroups/_doc"
+        - name: family-delete-service.base
+          value: "https://dev-elastic.fazeal.com/fazealGroups/_delete_by_query"
+        - name: post-bulkupdate-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-posts-v1/_update_by_query"
+        - name: post-create-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-posts-v1/_doc"
+        - name: post-delete-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-posts-v1/_delete_by_query"
+        - name: sketch-bulkupdate-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-sketch-v1/_update_by_query"
+        - name: sketch-create-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-sketch-v1/_doc"
+        - name: user-create-service.base
+          value: "https://dev-elastic.fazeal.com/fazealUsers/_doc"
+        - name: user-delete-service.base
+          value: "https://dev-elastic.fazeal.com/fazealUsers/_delete_by_query"
+        - name: voing-bulkupdate-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_update_by_query"
+        - name: voting-create-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_doc"
+        - name: voting-search-service.base
+          value: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_search"
+        image: cybersolutioncontainer/familymicroservices:$IMAGE
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 600
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 80
+          timeoutSeconds: 3
+        name: api-server
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: 80
+          timeoutSeconds: 1

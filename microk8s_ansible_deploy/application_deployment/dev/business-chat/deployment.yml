@@ -6,22 +6,34 @@ metadata:
   labels:
     app: business-chat
 spec:
-  replicas: 1
+  replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: business-chat
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
         app: business-chat
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
       containers:
         - name: business-chat
           image: khsaleh889/familymicroservices:$IMAGE
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3002
-              name: http
+            - name: http
+              containerPort: 3002
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: business-chat-config
@@ -29,26 +41,31 @@ spec:
                 name: business-chat-secret
           resources:
             requests:
-              memory: "512Mi"
               cpu: "250m"
+              memory: "512Mi"
             limits:
-              memory: "1Gi"
               cpu: "500m"
+              memory: "1Gi"
+          # Give the app time to bind the port
+          startupProbe:
+            tcpSocket:
+              port: 3002
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60   # ~5 minutes max warmup
+          # Use TCP to avoid 401 on secured actuator; switch to HTTP if health is open
+          readinessProbe:
+            tcpSocket:
+              port: 3002
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: 3002
             initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 3002
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-      imagePullSecrets:  
-        - name: dockerhub-secret
+

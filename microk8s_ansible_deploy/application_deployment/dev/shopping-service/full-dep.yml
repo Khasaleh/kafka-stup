@@ -1,0 +1,272 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopping-service-config
+  namespace: default
+  labels:
+    app: shopping-service
+data:
+  SERVICE_NAME: "shopping-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+
+  # App port
+  server.port: "80"
+
+  # Discovery (dev)
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  CONFIG_URL: "http://config-server"
+  eureka.instance.ip-address: "shopping-service"
+  eureka.instance.prefer-ip-address: "true"
+  spring.profiles.active: "dev"
+
+  # Database (dev)
+  DB_HOST: "192.168.1.213"
+  DB_PORT: "5432"
+  DB_NAME: "shopping-service_db"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://192.168.1.213:5432/shopping-service_db?currentSchema=public"
+
+  # Redis (dev)
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+
+  # S3 (dev)
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: shopping-service-secret
+  namespace: default
+  labels:
+    app: shopping-service
+type: Opaque
+data:
+  # admin / new2025 (same as other dev services)
+  DB_USER: YWRtaW4=
+  DB_PASSWORD: bmV3MjAyNQ==
+  REDIS_PASSWORD: YWRtaW4xMjM0
+
+  # S3 keys (same format you used elsewhere)
+  amazonProperties.accessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  amazonProperties.secretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  AWS_ACCESS_KEY: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  AWS_SECRET_KEY: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsSecretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsAccessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shopping-service
+  namespace: default
+  labels:
+    app: shopping-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: shopping-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shopping-service
+  namespace: default
+  labels:
+    app: shopping-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: shopping-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: shopping-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${DB_HOST}:${DB_PORT} (Postgres)…";
+              i=0; until nc -z ${DB_HOST} ${DB_PORT}; do i=$((i+1)); if [ "$i" -ge 300 ]; then echo "Postgres unreachable after ~10m"; exit 1; fi; sleep 2; done;
+              echo "Postgres is reachable.";
+          env:
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: shopping-service-config, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { configMapKeyRef: { name: shopping-service-config, key: DB_PORT } }
+
+        - name: wait-for-redis
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${REDIS_HOST}:${REDIS_PORT} (Redis)…";
+              i=0; until nc -z ${REDIS_HOST} ${REDIS_PORT}; do i=$((i+1)); if [ "$i" -ge 300 ]; then echo "Redis unreachable after ~10m"; exit 1; fi; sleep 2; done;
+              echo "Redis is reachable.";
+          env:
+            - name: REDIS_HOST
+              valueFrom: { configMapKeyRef: { name: shopping-service-config, key: REDIS_HOST } }
+            - name: REDIS_PORT
+              valueFrom: { configMapKeyRef: { name: shopping-service-config, key: REDIS_PORT } }
+
+      containers:
+        - name: shopping-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            # Basics
+            - { name: SERVICE_NAME, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: SERVICE_NAME } } }
+            - { name: NAMESPACE,    valueFrom: { configMapKeyRef: { name: shopping-service-config, key: NAMESPACE } } }
+            - { name: ENVIRONMENT,  valueFrom: { configMapKeyRef: { name: shopping-service-config, key: ENVIRONMENT } } }
+            - { name: LOG_LEVEL,    valueFrom: { configMapKeyRef: { name: shopping-service-config, key: LOG_LEVEL } } }
+            - { name: server.port,  valueFrom: { configMapKeyRef: { name: shopping-service-config, key: server.port } } }
+
+            # Discovery / Spring profile
+            - { name: DISCOVERY_URL, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: DISCOVERY_URL } } }
+            - { name: CONFIG_URL,    valueFrom: { configMapKeyRef: { name: shopping-service-config, key: CONFIG_URL } } }
+            - { name: eureka.instance.ip-address, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: eureka.instance.ip-address } } }
+            - { name: eureka.instance.prefer-ip-address, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: eureka.instance.prefer-ip-address } } }
+            - { name: spring.profiles.active, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: spring.profiles.active } } }
+
+            # DB
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { configMapKeyRef: { name: shopping-service-config, key: SPRING_DATASOURCE_URL } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: shopping-service-secret, key: DB_USER } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: shopping-service-secret, key: DB_PASSWORD } } }
+
+            # Redis (generic + Spring variants to avoid localhost fallback)
+            - { name: REDIS_HOST, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: REDIS_HOST } } }
+            - { name: REDIS_PORT, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: REDIS_PORT } } }
+            - { name: REDIS_PASSWORD, valueFrom: { secretKeyRef: { name: shopping-service-secret, key: REDIS_PASSWORD } } }
+            - { name: SPRING_REDIS_HOST, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: REDIS_HOST } } }
+            - { name: SPRING_REDIS_PORT, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: REDIS_PORT } } }
+            - { name: SPRING_REDIS_PASSWORD, valueFrom: { secretKeyRef: { name: shopping-service-secret, key: REDIS_PASSWORD } } }
+
+            # S3
+            - { name: amazonProperties.endpointUrl,    valueFrom: { configMapKeyRef: { name: shopping-service-config, key: amazonProperties.endpointUrl } } }
+            - { name: amazonProperties.bucketName,     valueFrom: { configMapKeyRef: { name: shopping-service-config, key: amazonProperties.bucketName } } }
+            - { name: amazonProperties.assetsBucketName, valueFrom: { configMapKeyRef: { name: shopping-service-config, key: amazonProperties.assetsBucketName } } }
+            - { name: amazonProperties.accessKey,      valueFrom: { secretKeyRef: { name: shopping-service-secret, key: "amazonProperties.accessKey" } } }
+            - { name: amazonProperties.secretKey,      valueFrom: { secretKeyRef: { name: shopping-service-secret, key: "amazonProperties.secretKey" } } }
+            - { name: AWS_ACCESS_KEY,                  valueFrom: { secretKeyRef: { name: shopping-service-secret, key: AWS_ACCESS_KEY } } }
+            - { name: AWS_SECRET_KEY,                  valueFrom: { secretKeyRef: { name: shopping-service-secret, key: AWS_SECRET_KEY } } }
+            - { name: amazonProperties.assetsAccessKey, valueFrom: { secretKeyRef: { name: shopping-service-secret, key: "amazonProperties.assetsAccessKey" } } }
+            - { name: amazonProperties.assetsSecretKey, valueFrom: { secretKeyRef: { name: shopping-service-secret, key: "amazonProperties.assetsSecretKey" } } }
+
+          startupProbe:
+            tcpSocket: { port: 80 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: shopping-service-hpa
+  namespace: default
+  labels:
+    app: shopping-service
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: shopping-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shopping-service-pdb
+  namespace: default
+  labels:
+    app: shopping-service
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: shopping-service

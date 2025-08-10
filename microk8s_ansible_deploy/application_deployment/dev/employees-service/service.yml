@@ -7,10 +7,10 @@ metadata:
     app: employees-service
 spec:
   type: ClusterIP
-  ports:
-    - port: 8088
-      targetPort: 8088
-      protocol: TCP
-      name: http
   selector:
     app: employees-service
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088
+      protocol: TCP

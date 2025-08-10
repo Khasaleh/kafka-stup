@@ -10,4 +10,4 @@ data:
   NAMESPACE: "default"
   ENVIRONMENT: "dev"
   LOG_LEVEL: "INFO"
-  NGINX_PORT: "8080"
+  NGINX_PORT: "4000"
