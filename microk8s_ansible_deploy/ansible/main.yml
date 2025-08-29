@@ -1,0 +1,10 @@
+---
+- name: Clean up MicroK8s cluster
+  hosts: kube_cluster
+  become: yes
+  roles:
+    - microk8s_cleanup
+
+- import_playbook: playbooks/install-cluster.yml
+
+- import_playbook: playbooks/deploy-application.yml
