@@ -1,0 +1,221 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: translation-service-config
+  namespace: default
+  labels:
+    app: translation-service
+data:
+  # Basics
+  SERVICE_NAME: "translation-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+
+  # App port
+  HOSTNAME: "translation-service"
+  PORT: "3001"
+
+  # Discovery (dev)
+  EUREKA_HOST: "192.168.1.212"
+  EUREKA_PORT: "8761"
+  # Many Eureka clients expect the /eureka suffix; expose both forms
+  EUREKA_URL: "http://192.168.1.212:8761/eureka"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: translation-service-secret
+  namespace: default
+  labels:
+    app: translation-service
+type: Opaque
+data: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: translation-service
+  namespace: default
+  labels:
+    app: translation-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: translation-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: translation-service
+  namespace: default
+  labels:
+    app: translation-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: translation-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: translation-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      # Optional: wait for Eureka to accept TCP connections
+      initContainers:
+        - name: wait-for-eureka
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${EUREKA_HOST}:${EUREKA_PORT} (Eureka)…";
+              i=0; until nc -z ${EUREKA_HOST} ${EUREKA_PORT}; do
+                i=$((i+1))
+                if [ "$i" -ge 300 ]; then
+                  echo "Eureka unreachable after ~10m"; exit 1
+                fi
+                sleep 2
+              done
+              echo "Eureka is reachable.";
+          env:
+            - name: EUREKA_HOST
+              valueFrom: { configMapKeyRef: { name: translation-service-config, key: EUREKA_HOST } }
+            - name: EUREKA_PORT
+              valueFrom: { configMapKeyRef: { name: translation-service-config, key: EUREKA_PORT } }
+
+      containers:
+        - name: translation-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          env:
+            # Common dev env
+            - { name: SERVICE_NAME, valueFrom: { configMapKeyRef: { name: translation-service-config, key: SERVICE_NAME } } }
+            - { name: NAMESPACE,    valueFrom: { configMapKeyRef: { name: translation-service-config, key: NAMESPACE } } }
+            - { name: ENVIRONMENT,  valueFrom: { configMapKeyRef: { name: translation-service-config, key: ENVIRONMENT } } }
+            - { name: LOG_LEVEL,    valueFrom: { configMapKeyRef: { name: translation-service-config, key: LOG_LEVEL } } }
+
+            # App networking
+            - { name: HOSTNAME, valueFrom: { configMapKeyRef: { name: translation-service-config, key: HOSTNAME } } }
+            - { name: PORT,     valueFrom: { configMapKeyRef: { name: translation-service-config, key: PORT } } }
+
+            # Eureka / Discovery — expose all common variants
+            - { name: EUREKA_HOST, valueFrom: { configMapKeyRef: { name: translation-service-config, key: EUREKA_HOST } } }
+            - { name: EUREKA_PORT, valueFrom: { configMapKeyRef: { name: translation-service-config, key: EUREKA_PORT } } }
+            - { name: EUREKA_URL,  valueFrom: { configMapKeyRef: { name: translation-service-config, key: EUREKA_URL } } }
+            - { name: DISCOVERY_URL, valueFrom: { configMapKeyRef: { name: translation-service-config, key: DISCOVERY_URL } } }
+            - name: eureka.instance.ip-address
+              value: "translation-service"
+
+          # Probes aligned with other dev services (generous startup)
+          startupProbe:
+            tcpSocket: { port: 3001 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket: { port: 3001 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: 3001 }
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: translation-service-hpa
+  namespace: default
+  labels:
+    app: translation-service
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: translation-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: translation-service-pdb
+  namespace: default
+  labels:
+    app: translation-service
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: translation-service

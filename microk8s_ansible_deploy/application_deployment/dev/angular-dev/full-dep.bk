@@ -1,0 +1,185 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-dev-config
+  namespace: default
+  labels:
+    app: angular-dev
+data:
+  SERVICE_NAME: "angular-dev"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  # If your nginx template uses this env var, keep it in sync with container/service port
+  NGINX_PORT: "4000"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: angular-dev-secret
+  namespace: default
+  labels:
+    app: angular-dev
+type: Opaque
+data:
+  # base64("angular-dev")
+  SERVICE_NAME: YW5ndWxhci1kZXY=
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: angular-dev
+  namespace: default
+  labels:
+    app: angular-dev
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: angular-dev
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: angular-dev
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: angular-dev
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: angular-dev-config
+            - secretRef:
+                name: angular-dev-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          # Wait for the port to open so we don't fail during warmup
+          startupProbe:
+            tcpSocket:
+              port: 4000
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60    # up to ~5 minutes
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 4000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 4000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: angular-dev
+  namespace: default
+  labels:
+    app: angular-dev
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 4000        # <-- matches your Ingress backend
+      targetPort: 4000  # <-- matches the container port
+      protocol: TCP
+  selector:
+    app: angular-dev
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: angular-dev-hpa
+  namespace: default
+  labels:
+    app: angular-dev
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: angular-dev
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: angular-dev-pdb
+  namespace: default
+  labels:
+    app: angular-dev
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: angular-dev

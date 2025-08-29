@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promotion-service-config
+  namespace: default
+  labels:
+    app: promotion-service
+data:
+  SERVICE_NAME: "promotion-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DB_HOST: "192.168.1.213"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  promotion-service-api.base: "http://promotion-service:80/api/v1"
+  customer-service-api.base: "http://customer-service:80"
+  fazeal-social-service-api.base: "http://api-server:80"
+  eureka.instance.ip-address: "promotion-service"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  catalog-service-api.base: "http://catalog-service:80/api/v1"

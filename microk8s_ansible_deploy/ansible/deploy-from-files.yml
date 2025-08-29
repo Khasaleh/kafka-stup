@@ -1,0 +1,65 @@
+---
+- name: Deploy Services from Application Deployment Files
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - "cluster_vars/{{ env }}.yml"
+    - "group_vars/{{ env }}/main.yml"
+    - vars/services.yml
+    - group_vars/all/main.yml
+    - group_vars/all/vault.yml
+
+  pre_tasks:
+    - name: Ensure environment variable is defined
+      fail:
+        msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
+      when: env is not defined
+
+  tasks:
+    - name: Deploy ConfigMap for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/configmap.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      when: service.name in ['config-server', 'api-server', 'site-management-service', 'shopping-service', 'posts-service', 'payment-gateway', 'order-service', 'notification-service', 'loyalty-service', 'inventory-service', 'fazeal-business-management', 'fazeal-business', 'events-service', 'angular-customer-ssr', 'cron-jobs', 'chat-app', 'business-chat', 'api-gateway', 'angular-dev', 'angular-customer', 'angular-business', 'angular-ads', 'angular-employee', 'album-service', 'ads-service', 'promotion-service', 'catalog-service', 'customer-service', 'employees-service', 'payment-service', 'translation-service', 'watermark-detection']
+
+    - name: Deploy Secret for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/secret.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      when: service.name in ['config-server', 'api-server', 'site-management-service', 'shopping-service', 'posts-service', 'payment-gateway', 'order-service', 'notification-service', 'loyalty-service', 'inventory-service', 'fazeal-business-management', 'fazeal-business', 'events-service', 'angular-customer-ssr', 'cron-jobs', 'chat-app', 'business-chat', 'api-gateway', 'angular-dev', 'angular-customer', 'angular-business', 'angular-ads', 'angular-employee', 'album-service', 'ads-service', 'promotion-service', 'catalog-service', 'customer-service', 'employees-service', 'payment-service', 'translation-service', 'watermark-detection']
+
+    - name: Deploy Service for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/service.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      when: service.name in ['config-server', 'api-server', 'site-management-service', 'shopping-service', 'posts-service', 'payment-gateway', 'order-service', 'notification-service', 'loyalty-service', 'inventory-service', 'fazeal-business-management', 'fazeal-business', 'events-service', 'angular-customer-ssr', 'cron-jobs', 'chat-app', 'business-chat', 'api-gateway', 'angular-dev', 'angular-customer', 'angular-business', 'angular-ads', 'angular-employee', 'album-service', 'ads-service', 'promotion-service', 'catalog-service', 'customer-service', 'employees-service', 'payment-service', 'translation-service', 'watermark-detection']
+
+    - name: Deploy Deployment for each service
+      k8s:
+        state: present
+        src: "application_deployment/{{ env }}/{{ item.name }}/deployment.yml"
+        kubeconfig: "~/.kube/config"
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      when: service.name in ['config-server', 'api-server', 'site-management-service', 'shopping-service', 'posts-service', 'payment-gateway', 'order-service', 'notification-service', 'loyalty-service', 'inventory-service', 'fazeal-business-management', 'fazeal-business', 'events-service', 'angular-customer-ssr', 'cron-jobs', 'chat-app', 'business-chat', 'api-gateway', 'angular-dev', 'angular-customer', 'angular-business', 'angular-ads', 'angular-employee', 'album-service', 'ads-service', 'promotion-service', 'catalog-service', 'customer-service', 'employees-service', 'payment-service', 'translation-service', 'watermark-detection'] 

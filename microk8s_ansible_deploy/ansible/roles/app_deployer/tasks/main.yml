@@ -15,8 +15,9 @@
     app_hpa: "{{ app.hpa | default({'min_replicas': 2, 'max_replicas': 10, 'cpu_utilization': 70, 'memory_utilization': 70}) }}"
     app_ingress_hostname: "{{ app.ingress_hostname | default(app.name + '.local') }}"
     enabled_manifests: "{{ app.enabled_manifests | default(['configmap.yml', 'secret.yml', 'deployment.yml', 'service.yml', 'hpa.yml', 'ingress.yml']) }}"
+    use_refactored_config: "{{ use_refactored_config | default(false) }}"
 
-
+# Service-specific configuration is now handled directly in templates
 
 - name: Create a temporary directory for manifests
   tempfile:
@@ -60,6 +61,31 @@
   loop_control:
     loop_var: manifest_file
   when: manifest_file in enabled_manifests
+
+- name: Create base64 encoded secret data
+  set_fact:
+    secret_data: "{{ {} }}"
+  when: use_refactored_config and service_configs[app_name] is defined and service_configs[app_name].secret is defined
+
+- name: Build secret data with base64 encoding
+  set_fact:
+    secret_data: "{{ secret_data | combine({item.key: item.value | b64encode}) }}"
+  loop: "{{ service_configs[app_name].secret | default({}) | dict2items(key_name='key', value_name='value') }}"
+  when: use_refactored_config and service_configs[app_name] is defined and service_configs[app_name].secret is defined
+
+- name: Patch ConfigMap with service-specific configuration
+  shell: |
+    kubectl patch configmap {{ app_name }}-config -p '{"data":{{ service_configs[app_name].configmap | to_json }}}' --type='merge'
+  delegate_to: localhost
+  run_once: true
+  when: use_refactored_config and service_configs[app_name] is defined and service_configs[app_name].configmap is defined
+
+- name: Patch Secret with service-specific configuration
+  shell: |
+    kubectl patch secret {{ app_name }}-secret -p '{"data":{{ secret_data | to_json }}}' --type='merge'
+  delegate_to: localhost
+  run_once: true
+  when: use_refactored_config and service_configs[app_name] is defined and service_configs[app_name].secret is defined and secret_data is defined
 
 - name: Clean up temporary manifest directory
   file:

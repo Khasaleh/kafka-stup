@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: watermark-detection
+  namespace: default
+  labels:
+    app: watermark-detection
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8105
+      targetPort: 8105
+      protocol: TCP
+      name: http
+  selector:
+    app: watermark-detection

@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: angular-customer-ssr-pdb
+  labels:
+    app: angular-customer-ssr
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: angular-customer-ssr

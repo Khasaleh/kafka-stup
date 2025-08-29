@@ -1,0 +1,185 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-employees-config
+  namespace: default
+  labels:
+    app: angular-employees
+data:
+  SERVICE_NAME: "angular-employees"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  # If your nginx template uses this env var, keep it aligned with the container/service port
+  NGINX_PORT: "8183"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: angular-employees-secret
+  namespace: default
+  labels:
+    app: angular-employees
+type: Opaque
+data:
+  # base64("angular-employees")
+  SERVICE_NAME: YW5ndWxhci1lbXBsb3llZXM=
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: angular-employees
+  namespace: default
+  labels:
+    app: angular-employees
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: angular-employees
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: angular-employees
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: angular-employees
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8183
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: angular-employees-config
+            - secretRef:
+                name: angular-employees-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          # Wait for port to open (nginx warmup)
+          startupProbe:
+            tcpSocket:
+              port: 8183
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8183
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 8183
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: angular-employees
+  namespace: default
+  labels:
+    app: angular-employees
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8183        # <-- keep this; your Ingress uses 8183
+      targetPort: 8183  # <-- matches container/nginx
+      protocol: TCP
+  selector:
+    app: angular-employees
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: angular-employees-hpa
+  namespace: default
+  labels:
+    app: angular-employees
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: angular-employees
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: angular-employees-pdb
+  namespace: default
+  labels:
+    app: angular-employees
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: angular-employees

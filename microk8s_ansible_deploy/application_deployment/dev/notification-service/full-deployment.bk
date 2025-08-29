@@ -1,0 +1,314 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-config
+  namespace: default
+  labels:
+    app: notification-service
+data:
+  SERVICE_NAME: "notification-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+
+  # App port (inside container)
+  server.port: "80"
+
+  # Discovery
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  CONFIG_URL: "http://config-server"
+  eureka.instance.ip-address: "notification-service"
+  spring.profiles.active: "dev"
+
+  # Database
+  DB_HOST: "192.168.1.213"
+  DB_PORT: "5432"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://192.168.1.213:5432/user_notification_service?currentSchema=public"
+
+  # Redis
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+
+  # Kafka
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
+
+  # S3
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+
+  # Mail
+  spring.mail.from: "no-reply@fazeal.com"
+
+  # External APIs
+  fazeal-social-service-api.base: "api-server"
+  fazeal-business-admin-management-service-api.base: "http://fazeal-business-management:80"
+  fazeal-business-admin-service-api.base: "http://fazeal-business:80"
+  loyalty-service-api.base: "http://loyalty-service:80"
+  site-management-service-api.base: "http://site-management-service:80/api/v1/"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notification-service-secret
+  namespace: default
+  labels:
+    app: notification-service
+type: Opaque
+data:
+  DB_USER: YWRtaW4=
+  DB_PASSWORD: bmV3MjAyNQ==
+  REDIS_PASSWORD: YWRtaW4xMjM0
+  amazonProperties.accessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  amazonProperties.secretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  AWS_ACCESS_KEY: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  AWS_SECRET_KEY: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsSecretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsAccessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  spring.mail.userName: "bm8tcmVwbHlAZmF6ZWFsLmNvbQ=="
+  spring.mail.password: "TmF6bzEwOTQj"
+  # STAGE ENCRYPTION KEY (as provided), base64-encoded for Secret.data:
+  ENCRYPTION_SECRET_KEY: "UWRSdzBJUU8vODFhMG5udGREeC9jZ3hReWkrUllyNXdIcW43d24vNnh1cz0="
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: default
+  labels:
+    app: notification-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80   # container listens on 80
+      protocol: TCP
+      name: http
+  selector:
+    app: notification-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: default
+  labels:
+    app: notification-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: notification-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${DB_HOST}:${DB_PORT}...";
+              until nc -z ${DB_HOST} ${DB_PORT}; do sleep 2; done;
+              echo "Postgres is reachable.";
+          env:
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: notification-service-config, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { configMapKeyRef: { name: notification-service-config, key: DB_PORT } }
+
+        - name: wait-for-redis
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${REDIS_HOST}:${REDIS_PORT}...";
+              until nc -z ${REDIS_HOST} ${REDIS_PORT}; do sleep 2; done;
+              echo "Redis is reachable.";
+          env:
+            - name: REDIS_HOST
+              valueFrom: { configMapKeyRef: { name: notification-service-config, key: REDIS_HOST } }
+            - name: REDIS_PORT
+              valueFrom: { configMapKeyRef: { name: notification-service-config, key: REDIS_PORT } }
+
+      containers:
+        - name: notification-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+          env:
+            # Keep JVM within pod limits
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75 -XX:InitialRAMPercentage=25 -XX:+ExitOnOutOfMemoryError"
+
+            # Profiles/port
+            - { name: SPRING_PROFILES_ACTIVE, valueFrom: { configMapKeyRef: { name: notification-service-config, key: spring.profiles.active } } }
+            - { name: SERVER_PORT,            valueFrom: { configMapKeyRef: { name: notification-service-config, key: server.port } } }
+
+            # DB
+            - { name: SPRING_DATASOURCE_URL,      valueFrom: { configMapKeyRef: { name: notification-service-config, key: SPRING_DATASOURCE_URL } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: notification-service-secret, key: DB_USER } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: notification-service-secret, key: DB_PASSWORD } } }
+
+            # Redis (avoid localhost fallback)
+            - { name: SPRING_REDIS_HOST,     valueFrom: { configMapKeyRef: { name: notification-service-config, key: REDIS_HOST } } }
+            - { name: SPRING_REDIS_PORT,     valueFrom: { configMapKeyRef: { name: notification-service-config, key: REDIS_PORT } } }
+            - { name: SPRING_REDIS_PASSWORD, valueFrom: { secretKeyRef: { name: notification-service-secret, key: REDIS_PASSWORD } } }
+
+            # Mail
+            - { name: SPRING_MAIL_USERNAME, valueFrom: { secretKeyRef: { name: notification-service-secret, key: "spring.mail.userName" } } }
+            - { name: SPRING_MAIL_PASSWORD, valueFrom: { secretKeyRef: { name: notification-service-secret, key: "spring.mail.password" } } }
+            - { name: SPRING_MAIL_FROM,     valueFrom: { configMapKeyRef: { name: notification-service-config, key: "spring.mail.from" } } }
+
+            # Kafka
+            - { name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS,  valueFrom: { configMapKeyRef: { name: notification-service-config, key: "spring.kafka.producer.bootstrap-servers" } } }
+            - { name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS,  valueFrom: { configMapKeyRef: { name: notification-service-config, key: "spring.kafka.consumer.bootstrap-servers" } } }
+            - { name: SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "spring.cloud.stream.kafka.binder.brokers" } } }
+
+            # S3
+            - { name: AMAZONPROPERTIES_ENDPOINTURL,        valueFrom: { configMapKeyRef: { name: notification-service-config, key: "amazonProperties.endpointUrl" } } }
+            - { name: AMAZONPROPERTIES_BUCKETNAME,         valueFrom: { configMapKeyRef: { name: notification-service-config, key: "amazonProperties.bucketName" } } }
+            - { name: AMAZONPROPERTIES_ASSETSBUCKETNAME,   valueFrom: { configMapKeyRef: { name: notification-service-config, key: "amazonProperties.assetsBucketName" } } }
+            - { name: AMAZONPROPERTIES_ACCESSKEY,          valueFrom: { secretKeyRef: { name: notification-service-secret, key: "amazonProperties.accessKey" } } }
+            - { name: AMAZONPROPERTIES_SECRETKEY,          valueFrom: { secretKeyRef: { name: notification-service-secret, key: "amazonProperties.secretKey" } } }
+            - { name: AMAZONPROPERTIES_ASSETSACCESSKEY,    valueFrom: { secretKeyRef: { name: notification-service-secret, key: "amazonProperties.assetsAccessKey" } } }
+            - { name: AMAZONPROPERTIES_ASSETSSECRETKEY,    valueFrom: { secretKeyRef: { name: notification-service-secret, key: "amazonProperties.assetsSecretKey" } } }
+
+            # Encryption key from Secret (same as stage)
+            - name: encryption.secret.key
+              valueFrom:
+                secretKeyRef:
+                  name: notification-service-secret
+                  key: ENCRYPTION_SECRET_KEY
+            # Optional duplicate in relaxed-binding form
+            - name: ENCRYPTION_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: notification-service-secret
+                  key: ENCRYPTION_SECRET_KEY
+
+            # Misc / discovery
+            - { name: SERVICE_NAME,               valueFrom: { configMapKeyRef: { name: notification-service-config, key: SERVICE_NAME } } }
+            - { name: NAMESPACE,                  valueFrom: { configMapKeyRef: { name: notification-service-config, key: NAMESPACE } } }
+            - { name: ENVIRONMENT,                valueFrom: { configMapKeyRef: { name: notification-service-config, key: ENVIRONMENT } } }
+            - { name: LOG_LEVEL,                  valueFrom: { configMapKeyRef: { name: notification-service-config, key: LOG_LEVEL } } }
+            - { name: DISCOVERY_URL,              valueFrom: { configMapKeyRef: { name: notification-service-config, key: DISCOVERY_URL } } }
+            - { name: CONFIG_URL,                 valueFrom: { configMapKeyRef: { name: notification-service-config, key: CONFIG_URL } } }
+            - { name: EUREKA_INSTANCE_IP_ADDRESS, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "eureka.instance.ip-address" } } }
+            - { name: FAZEAL_SOCIAL_SERVICE_API_BASE, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "fazeal-social-service-api.base" } } }
+            - { name: FAZEAL_BUSINESS_ADMIN_MANAGEMENT_SERVICE_API_BASE, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "fazeal-business-admin-management-service-api.base" } } }
+            - { name: FAZEAL_BUSINESS_ADMIN_SERVICE_API_BASE, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "fazeal-business-admin-service-api.base" } } }
+            - { name: LOYALTY_SERVICE_API_BASE, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "loyalty-service-api.base" } } }
+            - { name: SITE_MANAGEMENT_SERVICE_API_BASE, valueFrom: { configMapKeyRef: { name: notification-service-config, key: "site-management-service-api.base" } } }
+
+          # Probes -> port 80
+          startupProbe:
+            tcpSocket: { port: 80 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: default
+  labels:
+    app: notification-service
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notification-service-pdb
+  namespace: default
+  labels:
+    app: notification-service
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: notification-service

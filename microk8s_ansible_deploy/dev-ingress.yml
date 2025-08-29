@@ -1,0 +1,267 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dev-ingress
+  namespace: default
+  labels:
+    app: dev-ingress
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: 'true'
+    k8s.io/ingress-nginx: nginx
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 20m
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/x-forwarded-proto: https
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: dev-kube.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 80
+    - host: dev-kube-api.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-server
+                port:
+                  number: 80
+    - host: dev-kube-app.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-dev
+                port:
+                  number: 4000
+    - host: dev-config.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: config-server
+                port:
+                  number: 8888
+    - host: dev-business-admin.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fazeal-business-management
+                port:
+                  number: 80
+    - host: dev-business.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-business
+                port:
+                  number: 8082
+    - host: dev-kube-cron.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cron-jobs
+                port:
+                  number: 8011
+    - host: dev-kube-chat.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-app
+                port:
+                  number: 3000
+    - host: dev-kube-translation.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: translation-service
+                port:
+                  number: 3001
+    - host: dev-kube-ads.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ads-service
+                port:
+                  number: 80
+    - host: dev-ads.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-ads
+                port:
+                  number: 8082
+    - host: dev-kube-business-chat.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: business-chat
+                port:
+                  number: 3002
+    - host: dev-kube-post.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: posts-service
+                port:
+                  number: 80
+    - host: dev-kube-customer.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-service
+                port:
+                  number: 80
+    - host: dev-customer.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-customer
+                port:
+                  number: 8082
+    - host: dev-customer-ssr.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-customer-ssr
+                port:
+                  number: 8082
+    - host: dev-promotion.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: promotion-service
+                port:
+                  number: 80
+    - host: dev-elastic.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: elasticsearch-master
+                port:
+                  number: 9200
+    - host: dev-kibana.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana
+                port:
+                  number: 5601
+    - host: dev-search.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: search-service
+                port:
+                  number: 9090
+    - host: dev-employees.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-employees
+                port:
+                  number: 8183
+    - host: dev-kube-employees.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: employees-service
+                port:
+                  number: 80
+    - host: dev-dataload.fazeal.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dataload-service
+                port:
+                  number: 80
+    - host: '*.dev.fazeal.com'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-customer
+                port:
+                  number: 8082
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-customer
+                port:
+                  number: 8082

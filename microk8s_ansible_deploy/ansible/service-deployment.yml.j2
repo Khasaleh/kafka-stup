@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ app_name }}
+  namespace: {{ app_namespace | default('default') }}
+  labels:
+    app: {{ app_name }}
+spec:
+  replicas: {{ app_replicas | default(1) }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: {{ app_name }}
+          image: {{ app_image }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ app_container_port }}
+              protocol: TCP
+          env:
+{% if service_configs[app_name] is defined and service_configs[app_name].configmap is defined %}
+{% for key, value in service_configs[app_name].configmap.items() %}
+            - name: {{ key }}
+              value: "{{ value }}"
+{% endfor %}
+{% endif %}
+{% if service_configs[app_name] is defined and service_configs[app_name].secret is defined %}
+{% for key, value in service_configs[app_name].secret.items() %}
+            - name: {{ key }}
+              value: "{{ value }}"
+{% endfor %}
+{% endif %}
+          livenessProbe:
+{% if app_health_check_type == 'tcpSocket' %}
+            tcpSocket:
+              port: {{ app_health_check_port }}
+{% else %}
+            httpGet:
+              path: {{ app_health_check_path }}
+              port: {{ app_health_check_port }}
+{% endif %}
+            initialDelaySeconds: 180
+            periodSeconds: 20
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+{% if app_health_check_type == 'tcpSocket' %}
+            tcpSocket:
+              port: {{ app_health_check_port }}
+{% else %}
+            httpGet:
+              path: {{ app_health_check_path }}
+              port: {{ app_health_check_port }}
+{% endif %}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "{{ app_resources.requests.cpu | default('100m') }}"
+              memory: "{{ app_resources.requests.memory | default('128Mi') }}"
+            limits:
+              cpu: "{{ app_resources.limits.cpu | default('500m') }}"
+              memory: "{{ app_resources.limits.memory | default('512Mi') }}"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30 

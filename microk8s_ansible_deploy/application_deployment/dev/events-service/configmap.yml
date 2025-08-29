@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: events-service-config
+  namespace: default
+  labels:
+    app: events-service
+data:
+  SERVICE_NAME: "events-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DB_HOST: "192.168.1.213"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  fazeal-social-service-api.base: "http://api-server:80"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  eureka.instance.ip-address: "events-service"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "8089"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.224:39093"

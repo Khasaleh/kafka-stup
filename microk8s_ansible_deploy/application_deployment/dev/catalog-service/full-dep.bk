@@ -1,0 +1,300 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-service-config
+  namespace: default
+  labels:
+    app: catalog-service
+data:
+  SERVICE_NAME: "catalog-service"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  server.port: "8084"
+
+  # DB / Redis
+  DB_HOST: "192.168.1.213"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+
+  # Eureka
+  eureka.instance.ip-address: "catalog-service"
+  eureka.instance.prefer-ip-address: "true"
+
+  # External deps
+  chirps-create-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_doc"
+  chirps-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_delete_by_query"
+  chirps-search-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_search"
+
+  # S3/Wasabi
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: catalog-service-secret
+  namespace: default
+  labels:
+    app: catalog-service
+type: Opaque
+data:
+  DB_USER: "YWRtaW4="
+  DB_PASSWORD: "bmV3MjAyNQ=="
+  REDIS_PASSWORD: "YWRtaW4xMjM0"
+  amazonProperties.accessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  amazonProperties.secretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  AWS_ACCESS_KEY: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  AWS_SECRET_KEY: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsSecretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsAccessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: default
+  labels:
+    app: catalog-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084
+      protocol: TCP
+  selector:
+    app: catalog-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: default
+  labels:
+    app: catalog-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: catalog-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: catalog-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SERVICE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: SERVICE_NAME
+            - name: DISCOVERY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: DISCOVERY_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: DB_HOST
+            - name: spring.profiles.active
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: spring.profiles.active
+            - name: CONFIG_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: CONFIG_URL
+            - name: amazonProperties.endpointUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: amazonProperties.endpointUrl
+            - name: amazonProperties.bucketName
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: amazonProperties.bucketName
+            - name: amazonProperties.assetsBucketName
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: amazonProperties.assetsBucketName
+            - name: eureka.instance.ip-address
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: eureka.instance.ip-address
+            - name: eureka.instance.prefer-ip-address
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: eureka.instance.prefer-ip-address
+            - name: server.port
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: server.port
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-service-config
+                  key: REDIS_PORT
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: DB_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: REDIS_PASSWORD
+            - name: amazonProperties.accessKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.accessKey
+            - name: amazonProperties.secretKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.secretKey
+            - name: amazonProperties.assetsAccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.assetsAccessKey
+            - name: amazonProperties.assetsSecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: amazonProperties.assetsSecretKey
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-secret
+                  key: AWS_SECRET_KEY
+          livenessProbe:
+            tcpSocket:
+              port: 8084
+            initialDelaySeconds: 180
+            periodSeconds: 15
+            failureThreshold: 6
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 8084
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: catalog-service-hpa
+  namespace: default
+  labels:
+    app: catalog-service
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: catalog-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: catalog-service-pdb
+  namespace: default
+  labels:
+    app: catalog-service
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: catalog-service

@@ -1,0 +1,183 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-ads-config
+  namespace: default
+  labels:
+    app: angular-ads
+data:
+  SERVICE_NAME: "angular-ads"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: angular-ads-secret
+  namespace: default
+  labels:
+    app: angular-ads
+type: Opaque
+data:
+  # base64("angular-ads")
+  SERVICE_NAME: YW5ndWxhci1hZHM=
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: angular-ads
+  namespace: default
+  labels:
+    app: angular-ads
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: angular-ads
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: angular-ads
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: angular-ads
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8082          # <-- nginx listens here
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: angular-ads-config
+            - secretRef:
+                name: angular-ads-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          # Wait for the port to open (avoid 404/rewrites during warmup)
+          startupProbe:
+            tcpSocket:
+              port: 8082
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60          # up to ~5 minutes
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: angular-ads
+  namespace: default
+  labels:
+    app: angular-ads
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8082            # <-- Ingress already points to this
+      targetPort: 8082      # <-- match the container/nginx port
+      protocol: TCP
+  selector:
+    app: angular-ads
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: angular-ads-hpa
+  namespace: default
+  labels:
+    app: angular-ads
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: angular-ads
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: angular-ads-pdb
+  namespace: default
+  labels:
+    app: angular-ads
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: angular-ads

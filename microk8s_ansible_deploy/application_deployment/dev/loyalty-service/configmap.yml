@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loyalty-service-config
+  namespace: default
+  labels:
+    app: loyalty-service
+data:
+  SERVICE_NAME: "loyalty-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  eureka.instance.ip-address: "loyalty-service"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  CONFIG_URL: "http://config-server"
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
