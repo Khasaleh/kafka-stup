@@ -1,0 +1,232 @@
+---
+- name: Deploy Elastic Stack using YAML manifests
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Create Elasticsearch namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: elasticsearch
+
+    - name: Deploy Elasticsearch StatefulSet
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: StatefulSet
+          metadata:
+            name: elasticsearch-master
+            namespace: elasticsearch
+          spec:
+            serviceName: elasticsearch-master-headless
+            replicas: 1
+            selector:
+              matchLabels:
+                app: elasticsearch-master
+            template:
+              metadata:
+                labels:
+                  app: elasticsearch-master
+              spec:
+                containers:
+                - name: elasticsearch
+                  image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
+                  ports:
+                  - containerPort: 9200
+                    name: http
+                  - containerPort: 9300
+                    name: transport
+                  env:
+                  - name: cluster.name
+                    value: "elasticsearch"
+                  - name: node.name
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: discovery.seed_hosts
+                    value: "elasticsearch-master-0.elasticsearch-master-headless.elasticsearch.svc.cluster.local"
+                  - name: cluster.initial_master_nodes
+                    value: "elasticsearch-master-0"
+                  - name: ES_JAVA_OPTS
+                    value: "-Xms512m -Xmx512m"
+                  - name: xpack.security.enabled
+                    value: "false"
+                  volumeMounts:
+                  - name: elasticsearch-data
+                    mountPath: /usr/share/elasticsearch/data
+                  resources:
+                    requests:
+                      memory: "1Gi"
+                      cpu: "500m"
+                    limits:
+                      memory: "2Gi"
+                      cpu: "1000m"
+                  readinessProbe:
+                    httpGet:
+                      path: /_cluster/health
+                      port: 9200
+                    initialDelaySeconds: 30
+                    periodSeconds: 10
+                    timeoutSeconds: 5
+                    failureThreshold: 3
+                  livenessProbe:
+                    httpGet:
+                      path: /_cluster/health
+                      port: 9200
+                    initialDelaySeconds: 60
+                    periodSeconds: 30
+                    timeoutSeconds: 10
+                    failureThreshold: 3
+            volumeClaimTemplates:
+            - metadata:
+                name: elasticsearch-data
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 10Gi
+
+    - name: Deploy Elasticsearch Service
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: elasticsearch-master
+            namespace: elasticsearch
+          spec:
+            ports:
+            - port: 9200
+              targetPort: 9200
+              name: http
+            - port: 9300
+              targetPort: 9300
+              name: transport
+            selector:
+              app: elasticsearch-master
+
+    - name: Deploy Elasticsearch Headless Service
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: elasticsearch-master-headless
+            namespace: elasticsearch
+          spec:
+            clusterIP: None
+            ports:
+            - port: 9200
+              targetPort: 9200
+              name: http
+            - port: 9300
+              targetPort: 9300
+              name: transport
+            selector:
+              app: elasticsearch-master
+
+    - name: Deploy Kibana Deployment
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: kibana
+            namespace: elasticsearch
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: kibana
+            template:
+              metadata:
+                labels:
+                  app: kibana
+              spec:
+                containers:
+                - name: kibana
+                  image: docker.elastic.co/kibana/kibana:8.5.1
+                  ports:
+                  - containerPort: 5601
+                    name: http
+                  env:
+                  - name: ELASTICSEARCH_HOSTS
+                    value: "http://elasticsearch-master:9200"
+                  - name: SERVER_NAME
+                    value: "kibana"
+                  - name: SERVER_HOST
+                    value: "0.0.0.0"
+                  resources:
+                    requests:
+                      memory: "512Mi"
+                      cpu: "250m"
+                    limits:
+                      memory: "1Gi"
+                      cpu: "500m"
+                  readinessProbe:
+                    httpGet:
+                      path: /api/status
+                      port: 5601
+                    initialDelaySeconds: 30
+                    periodSeconds: 10
+                    timeoutSeconds: 5
+                    failureThreshold: 3
+                  livenessProbe:
+                    httpGet:
+                      path: /api/status
+                      port: 5601
+                    initialDelaySeconds: 60
+                    periodSeconds: 30
+                    timeoutSeconds: 10
+                    failureThreshold: 3
+
+    - name: Deploy Kibana Service
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: kibana
+            namespace: elasticsearch
+          spec:
+            ports:
+            - port: 5601
+              targetPort: 5601
+              name: http
+            selector:
+              app: kibana
+
+    - name: Wait for Elasticsearch to be ready
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: elasticsearch
+        label_selectors:
+          - app=elasticsearch-master
+      register: elasticsearch_pods
+      until: elasticsearch_pods.resources | length > 0 and elasticsearch_pods.resources[0].status.phase == 'Running'
+      retries: 30
+      delay: 10
+
+    - name: Wait for Kibana to be ready
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: elasticsearch
+        label_selectors:
+          - app=kibana
+      register: kibana_pods
+      until: kibana_pods.resources | length > 0 and kibana_pods.resources[0].status.phase == 'Running'
+      retries: 30
+      delay: 10
+
+    - name: Display deployment status
+      debug:
+        msg: "Elastic Stack deployment completed successfully" 

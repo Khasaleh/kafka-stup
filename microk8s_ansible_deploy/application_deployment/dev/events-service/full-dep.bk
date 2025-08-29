@@ -1,0 +1,243 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: events-service-config
+  namespace: default
+  labels:
+    app: events-service
+data:
+  SERVICE_NAME: "events-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+
+  # App port (must match container & Service)
+  server.port: "8089"
+
+  # Discovery/Spring
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  spring.batch.job.enabled: "false"
+  eureka.instance.ip-address: "events-service"
+  eureka.instance.prefer-ip-address: "true"
+
+  # DB host/port (used by initContainer wait probe)
+  DB_HOST: "192.168.1.213"
+  DB_PORT: "5432"
+
+  # ✅ JDBC URL pointing to the correct database
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://192.168.1.213:5432/events_service?currentSchema=public"
+
+  # Redis
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+
+  # External deps
+  fazeal-social-service-api.base: "http://api-server:80"
+
+  # S3 - from original configmap
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+
+  # Kafka
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.224:39093"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.224:39093"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: events-service-secret
+  namespace: default
+  labels:
+    app: events-service
+type: Opaque
+data:
+  # admin
+  DB_USER: YWRtaW4=
+  # new2025
+  DB_PASSWORD: bmV3MjAyNQ==
+  # redis password
+  REDIS_PASSWORD: YWRtaW4xMjM0
+  # JWT Secret
+  JWT_SECRET: and0X3NlY3JldF9rZXlfZm9yX2V2ZW50cy1zZXJ2aWNlXzIwMjQ=
+  # Wasabi/S3 keys (unchanged)
+  amazonProperties.accessKey: VVU1MUJSWVFSOEpKSkQyWDBTMTE=
+  amazonProperties.secretKey: aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA==
+  AWS_ACCESS_KEY: VVU1MUJSWVFSOEpKSkQyWDBTMTE=
+  AWS_SECRET_KEY: aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA==
+  amazonProperties.assetsSecretKey: aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA==
+  amazonProperties.assetsAccessKey: VVU1MUJSWVFSOEpKSkQyWDBTMTE=
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: events-service
+  namespace: default
+  labels:
+    app: events-service
+spec:
+  type: ClusterIP
+  selector:
+    app: events-service
+  ports:
+    - name: http
+      port: 8089
+      targetPort: 8089
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: events-service
+  namespace: default
+  labels:
+    app: events-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: events-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: events-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      # Wait for Postgres before starting the app
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${DB_HOST}:${DB_PORT}...";
+              until nc -z ${DB_HOST} ${DB_PORT}; do sleep 2; done;
+              echo "Postgres is reachable.";
+          env:
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: DB_PORT } }
+
+      containers:
+        - name: events-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8089
+              protocol: TCP
+
+          env:
+            # App + discovery
+            - name: SERVICE_NAME
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: SERVICE_NAME } }
+            - name: NAMESPACE
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: NAMESPACE } }
+            - name: ENVIRONMENT
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: ENVIRONMENT } }
+            - name: LOG_LEVEL
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: LOG_LEVEL } }
+            - name: DISCOVERY_URL
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: DISCOVERY_URL } }
+            - name: spring.profiles.active
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: spring.profiles.active } }
+            - name: CONFIG_URL
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: CONFIG_URL } }
+            - name: eureka.instance.ip-address
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: eureka.instance.ip-address } }
+            - name: eureka.instance.prefer-ip-address
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: eureka.instance.prefer-ip-address } }
+            - name: server.port
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: server.port } }
+
+            # ✅ Spring datasource (now points to eventsdb)
+            - name: SPRING_DATASOURCE_URL
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: SPRING_DATASOURCE_URL } }
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: DB_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: DB_PASSWORD } }
+
+            # External deps
+            - name: fazeal-social-service-api.base
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: fazeal-social-service-api.base } }
+
+            # S3
+            - name: amazonProperties.endpointUrl
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: amazonProperties.endpointUrl } }
+            - name: amazonProperties.bucketName
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: amazonProperties.bucketName } }
+            - name: amazonProperties.assetsBucketName
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: amazonProperties.assetsBucketName } }
+
+            # Redis
+            - name: REDIS_HOST
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: REDIS_HOST } }
+            - name: REDIS_PORT
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: REDIS_PORT } }
+
+            # Kafka
+            - name: spring.kafka.producer.bootstrap-servers
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: spring.kafka.producer.bootstrap-servers } }
+            - name: spring.cloud.stream.kafka.binder.brokers
+              valueFrom: { configMapKeyRef: { name: events-service-config, key: spring.cloud.stream.kafka.binder.brokers } }
+
+            # Secrets passthrough (S3, Redis pass, JWT)
+            - name: amazonProperties.accessKey
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: amazonProperties.accessKey } }
+            - name: amazonProperties.secretKey
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: amazonProperties.secretKey } }
+            - name: AWS_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: AWS_ACCESS_KEY } }
+            - name: AWS_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: AWS_SECRET_KEY } }
+            - name: amazonProperties.assetsAccessKey
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: amazonProperties.assetsAccessKey } }
+            - name: amazonProperties.assetsSecretKey
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: amazonProperties.assetsSecretKey } }
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: REDIS_PASSWORD } }
+            - name: JWT_SECRET
+              valueFrom: { secretKeyRef: { name: events-service-secret, key: JWT_SECRET } }
+
+          # TCP probes (service just needs to accept connections)
+          startupProbe:
+            tcpSocket: { port: 8089 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket: { port: 8089 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket: { port: 8089 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"

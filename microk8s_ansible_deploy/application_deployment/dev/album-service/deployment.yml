@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: album-service
+  namespace: default
+  labels:
+    app: album-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: album-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: album-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: album-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DISCOVERY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: DISCOVERY_URL
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: DB_HOST
+            - name: spring.profiles.active
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: spring.profiles.active
+            - name: CONFIG_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: CONFIG_URL
+            - name: amazonProperties.endpointUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: amazonProperties.endpointUrl
+            - name: amazonProperties.bucketName
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: amazonProperties.bucketName
+            - name: amazonProperties.assetsBucketName
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: amazonProperties.assetsBucketName
+            - name: spring.batch.job.enabled
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: spring.batch.job.enabled
+            - name: eureka.instance.ip-address
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: eureka.instance.ip-address
+            - name: eureka.instance.prefer-ip-address
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: eureka.instance.prefer-ip-address
+            - name: server.port
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: server.port
+            - name: spring.cloud.stream.kafka.binder.brokers
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: spring.cloud.stream.kafka.binder.brokers
+            - name: spring.kafka.producer.bootstrap-servers
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: spring.kafka.producer.bootstrap-servers
+            - name: spring.kafka.consumer.bootstrap-servers
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: spring.kafka.consumer.bootstrap-servers
+            - name: spring.kafka.bootstrap-servers
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: spring.kafka.bootstrap-servers
+            - name: fazeal-social-service-api.base
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: fazeal-social-service-api.base
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: album-service-config
+                  key: REDIS_PORT
+            - name: SERVICE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: SERVICE_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: DB_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: REDIS_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: JWT_SECRET
+            - name: amazonProperties.accessKey
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: amazonProperties.accessKey
+            - name: amazonProperties.secretKey
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: amazonProperties.secretKey
+            - name: amazonProperties.assetsAccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: amazonProperties.assetsAccessKey
+            - name: amazonProperties.assetsSecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: amazonProperties.assetsSecretKey
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: album-service-secret
+                  key: AWS_SECRET_KEY
+          livenessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 180
+            periodSeconds: 15
+            failureThreshold: 6
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"

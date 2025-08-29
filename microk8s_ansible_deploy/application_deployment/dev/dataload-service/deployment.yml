@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataload-service
+  namespace: default
+  labels:
+    app: dataload-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+  template:
+    metadata:
+      labels:
+        app: dataload-service
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: dataload-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: dataload-service-config
+            - secretRef:
+                name: dataload-service-secrets
+          # Ensure these two are definitely present/overriding defaults
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: dataload-service-config
+                  key: ENVIRONMENT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dataload-service-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dataload-service-celery-worker
+  namespace: default
+  labels:
+    app: dataload-service
+    component: celery-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+      component: celery-worker
+  template:
+    metadata:
+      labels:
+        app: dataload-service
+        component: celery-worker
+    spec:
+      containers:
+        - name: celery-worker-container
+          image: khsaleh889/familymicroservices:${IMAGE_TAG}
+          imagePullPolicy: Always
+          command: ["celery"]
+          args:
+            - "-A"
+            - "app.tasks.celery_worker.celery_app"
+            - "worker"
+            - "-l"
+            - "INFO"
+          envFrom:
+            - configMapRef:
+                name: dataload-service-config
+            - secretRef:
+                name: dataload-service-secrets
+          env:
+            - name: DISCOVERY_URL
+              value: http://192.168.1.212:8761
+            - name: spring.profiles.active
+              value: dev
+            - name: CONFIG_URL
+              value: http://config-server
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+      imagePullSecrets:
+        - name: dockerhub-secret

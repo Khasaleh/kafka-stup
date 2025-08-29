@@ -1,0 +1,31 @@
+# PDB for FastAPI Application
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dataload-service-pdb
+  namespace: default
+  labels:
+    app: dataload-service
+    component: fastapi
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+      component: fastapi
+---
+# PDB for Celery Workers
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dataload-celery-pdb
+  namespace: default
+  labels:
+    app: dataload-service
+    component: celery
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: dataload-service
+      component: celery

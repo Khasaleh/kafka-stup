@@ -277,7 +277,7 @@ services:
       - name: "DB_PASSWORD"
         value: "admin1234"
       - name: "DISCOVERY_URL"
-        value: "http://192.168.1.211:8761"
+        value: "http://192.168.1.212:8761"
       - name: "amazonProperties.endpointUrl"
         value: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
 

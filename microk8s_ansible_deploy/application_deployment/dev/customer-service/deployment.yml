@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: default
+  labels:
+    app: customer-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: customer-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: customer-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8087
+              protocol: TCP
+
+          # ---- Env from ConfigMap ----
+          env:
+            - name: SERVICE_NAME
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: SERVICE_NAME } }
+            - name: NAMESPACE
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: NAMESPACE } }
+            - name: ENVIRONMENT
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: ENVIRONMENT } }
+            - name: LOG_LEVEL
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: LOG_LEVEL } }
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: DB_HOST } }
+            - name: DISCOVERY_URL
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: DISCOVERY_URL } }
+            - name: spring.profiles.active
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: spring.profiles.active } }
+            - name: CONFIG_URL
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: CONFIG_URL } }
+            - name: amazonProperties.endpointUrl
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: amazonProperties.endpointUrl } }
+            - name: amazonProperties.bucketName
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: amazonProperties.bucketName } }
+            - name: amazonProperties.assetsBucketName
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: amazonProperties.assetsBucketName } }
+            - name: spring.batch.job.enabled
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: spring.batch.job.enabled } }
+            - name: REDIS_HOST
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: REDIS_HOST } }
+            - name: REDIS_PORT
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: REDIS_PORT } }
+            - name: eureka.instance.ip-address
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: eureka.instance.ip-address } }
+            - name: eureka.instance.prefer-ip-address
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: eureka.instance.prefer-ip-address } }
+            - name: server.port
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: server.port } }
+            - name: promotion-service-api.base
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: promotion-service-api.base } }
+            - name: payment-service-api.base
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: payment-service-api.base } }
+            - name: catalog-service-api.base
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: catalog-service-api.base } }
+            - name: fazeal-business-admin-service-api.base
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: fazeal-business-admin-service-api.base } }
+            - name: paypal-payment-service-api.base
+              valueFrom: { configMapKeyRef: { name: customer-service-config, key: paypal-payment-service-api.base } }
+
+          # ---- Env from Secret ----
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: DB_USER } }
+            - name: DB_PASS
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: DB_PASS } }
+            - name: amazonProperties.accessKey
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: amazonProperties.accessKey } }
+            - name: amazonProperties.secretKey
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: amazonProperties.secretKey } }
+            - name: AWS_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: AWS_ACCESS_KEY } }
+            - name: AWS_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: AWS_SECRET_KEY } }
+            - name: amazonProperties.assetsAccessKey
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: amazonProperties.assetsAccessKey } }
+            - name: amazonProperties.assetsSecretKey
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: amazonProperties.assetsSecretKey } }
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: customer-service-secret, key: REDIS_PASSWORD } }
+
+          # ---- Probes (TCP on 8087) ----
+          startupProbe:
+            tcpSocket:
+              port: 8087
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: 8087
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8087
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ---- Resources ----
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"

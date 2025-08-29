@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: watermark-detection
+  namespace: default
+  labels:
+    app: watermark-detection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: watermark-detection
+  template:
+    metadata:
+      labels:
+        app: watermark-detection
+    spec:
+      containers:
+        - name: watermark-detection
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8105
+              name: http
+          envFrom:
+            - configMapRef:
+                name: watermark-detection-config
+            - secretRef:
+                name: watermark-detection-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8105 
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8105
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: dockerhub-secret

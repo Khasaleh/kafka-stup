@@ -31,106 +31,11 @@ spec:
             limits:
               cpu: "{{ app_resources.limits.cpu | default('500m') }}"
               memory: "{{ app_resources.limits.memory | default('512Mi') }}"
-          env:
-            # Common environment variables
-            - name: spring.profiles.active
-              value: "{{ env }}"
-            - name: CONFIG_URL
-              value: "http://config-server"
-            - name: amazonProperties.endpointUrl
-              value: "https://s3.us-east-1.wasabisys.com/"
-            - name: amazonProperties.bucketName
-              value: "fazeal-social-nonprod.fazeal.com"
-            - name: amazonProperties.assetsBucketName
-              value: "fazeal-ui-assets.fazeal.com"
-            - name: spring.batch.job.enabled
-              value: "false"
-            - name: eureka.instance.prefer-ip-address
-              value: "true"
-            - name: server.port
-              value: "80"
-            - name: spring.cloud.stream.kafka.binder.brokers
-              value: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
-            - name: spring.kafka.producer.bootstrap-servers
-              value: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
-            - name: spring.kafka.consumer.bootstrap-servers
-              value: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
-            - name: spring.kafka.bootstrap-servers
-              value: "{{ kafka_broker_ip }}:29093,{{ kafka_broker_ip }}:39093"
-            - name: fazeal-social-service-api.base
-              value: "http://api-server:80"
-            - name: REDIS_HOST
-              value: "{{ redis_host }}"
-            - name: REDIS_PORT
-              value: "6379"
-            - name: DB_HOST
-              value: "{{ db_host }}"
-            - name: DISCOVERY_URL
-              value: "http://{{ eureka_ip }}:8761"
-            - name: EUREKA_HOST
-              value: "{{ eureka_ip }}"
-            - name: EUREKA_PORT
-              value: "8761"
-            - name: elasticsearch.host
-              value: "{{ elasticsearch_host }}"
-            - name: elasticsearch.port
-              value: "9200"
-            # Vault variables
-            - name: DB_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: DB_PASS
-            - name: AWS_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: AWS_ACCESS_KEY
-            - name: AWS_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: AWS_SECRET_KEY
-            - name: CONFIG_USER
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: CONFIG_USER
-            - name: CONFIG_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: CONFIG_PASS
-            - name: encryption.secret.key
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: encryption.secret.key
-            - name: spring.mail.userName
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: spring.mail.userName
-            - name: spring.mail.password
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: spring.mail.password
-            - name: spring.mail.from
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: spring.mail.from
-            - name: STG_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: STG_DB_PASSWORD
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ app_name }}-secret"
-                  key: DB_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: "{{ app_name }}-config"
+            - secretRef:
+                name: "{{ app_name }}-secret"
           livenessProbe:
             httpGet:
               path: "{{ app_health_check_path | default('/') }}"

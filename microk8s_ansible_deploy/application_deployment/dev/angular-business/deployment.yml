@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: angular-business
+  namespace: default
+  labels:
+    app: angular-business
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: angular-business
+  template:
+    metadata:
+      labels:
+        app: angular-business
+    spec:
+      containers:
+        - name: angular-business
+          image: khsaleh889/angular-business:v1.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+              name: http
+          envFrom:
+            - configMapRef:
+                name: angular-business-config
+            - secretRef:
+                name: angular-business-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      imagePullSecrets: 
+        - name: dockerhub-secret

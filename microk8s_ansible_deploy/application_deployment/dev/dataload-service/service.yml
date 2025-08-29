@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataload-service
+  namespace: default
+  labels:
+    app: dataload-service
+    component: fastapi
+spec:
+  selector:
+    app: dataload-service
+    component: fastapi
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+      name: http
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataload-celery-service
+  namespace: default
+  labels:
+    app: dataload-service
+    component: celery
+spec:
+  selector:
+    app: dataload-service
+    component: celery
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+      name: http
+  type: ClusterIP

@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employees-service
+  namespace: default
+  labels:
+    app: employees-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: employees-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 25%, maxUnavailable: 25% }
+  template:
+    metadata:
+      labels:
+        app: employees-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: employees-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8088
+              protocol: TCP
+          env:
+            # app + discovery
+            - name: SERVICE_NAME
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: SERVICE_NAME } }
+            - name: NAMESPACE
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: NAMESPACE } }
+            - name: ENVIRONMENT
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: ENVIRONMENT } }
+            - name: LOG_LEVEL
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: LOG_LEVEL } }
+            - name: DISCOVERY_URL
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: DISCOVERY_URL } }
+            - name: spring.profiles.active
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: spring.profiles.active } }
+            - name: CONFIG_URL
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: CONFIG_URL } }
+            - name: eureka.instance.ip-address
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: eureka.instance.ip-address } }
+            - name: eureka.instance.prefer-ip-address
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: eureka.instance.prefer-ip-address } }
+            - name: server.port
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: server.port } }
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: DB_HOST } }
+            - name: CONFIG_URL
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: DB_PORT } }
+
+
+            # external deps
+            - name: user-notification-service-api.base
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: user-notification-service-api.base } }
+            - name: album-api.base
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: album-api.base } }
+            - name: fazeal-business-admin-service-api.base
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: fazeal-business-admin-service-api.base } }
+            - name: site-management-service-api.base
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: site-management-service-api.base } }
+
+            # Redis
+            - name: REDIS_HOST
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: REDIS_HOST } }
+            - name: REDIS_PORT
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: REDIS_PORT } }
+
+            # Kafka
+            - name: spring.kafka.producer.bootstrap-servers
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: spring.kafka.producer.bootstrap-servers } }
+            - name: spring.cloud.stream.kafka.binder.brokers
+              valueFrom: { configMapKeyRef: { name: employees-service-config, key: spring.cloud.stream.kafka.binder.brokers } }
+
+            # DB (Spring-recognized envs)
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: DB_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: DB_PASSWORD } }
+
+
+
+            # Secrets passthrough (S3, Redis pass)
+            - name: amazonProperties.accessKey
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: amazonProperties.accessKey } }
+            - name: amazonProperties.secretKey
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: amazonProperties.secretKey } }
+            - name: AWS_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: AWS_ACCESS_KEY } }
+            - name: AWS_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: AWS_SECRET_KEY } }
+            - name: amazonProperties.assetsAccessKey
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: amazonProperties.assetsAccessKey } }
+            - name: amazonProperties.assetsSecretKey
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: amazonProperties.assetsSecretKey } }
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: employees-service-secret, key: REDIS_PASSWORD } }
+
+          startupProbe:
+            httpGet: { path: /, port: 8088 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /, port: 8088 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /, port: 8088 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: { cpu: "500m", memory: "1Gi" }
+            limits:   { cpu: "1000m", memory: "2Gi" }

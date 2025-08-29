@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-service-config
+  namespace: default
+  labels:
+    app: catalog-service
+data:
+  SERVICE_NAME: "catalog-service"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  spring.profiles.active: "dev"
+  CONFIG_URL: "http://config-server"
+  server.port: "8084"
+
+  # DB / Redis
+  DB_HOST: "192.168.1.213"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+
+  # Eureka
+  eureka.instance.ip-address: "catalog-service"
+  eureka.instance.prefer-ip-address: "true"
+
+  # External deps
+  chirps-create-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_doc"
+  chirps-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_delete_by_query"
+  chirps-search-service.base: "https://dev-elastic.fazeal.com/fazeal-products-v1/_search"
+
+  # S3/Wasabi
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"

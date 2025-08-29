@@ -1,0 +1,37 @@
+---
+- name: Deploy Config Server from Files (Simple)
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Deploy Config Server ConfigMap
+      k8s:
+        state: present
+        src: "application_deployment/dev/config-server/configmap.yml"
+        kubeconfig: "~/.kube/config"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Config Server Secret
+      k8s:
+        state: present
+        src: "application_deployment/dev/config-server/secret.yml"
+        kubeconfig: "~/.kube/config"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Config Server Service
+      k8s:
+        state: present
+        src: "application_deployment/dev/config-server/service.yml"
+        kubeconfig: "~/.kube/config"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy Config Server Deployment
+      k8s:
+        state: present
+        src: "application_deployment/dev/config-server/deployment.yml"
+        kubeconfig: "~/.kube/config"
+      delegate_to: localhost
+      run_once: true 

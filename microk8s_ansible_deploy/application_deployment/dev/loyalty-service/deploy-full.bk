@@ -1,0 +1,247 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loyalty-service-config
+  namespace: default
+  labels:
+    app: loyalty-service
+data:
+  SERVICE_NAME: "loyalty-service"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  server.port: "80"
+
+  # Discovery
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  CONFIG_URL: "http://config-server"
+  eureka.instance.ip-address: "loyalty-service"
+  eureka.instance.prefer-ip-address: "true"
+  spring.profiles.active: "dev"
+
+  # Database
+  DB_HOST: "192.168.1.213"
+  DB_PORT: "5432"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://192.168.1.213:5432/loyalty_service?currentSchema=public"
+
+  # Redis
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  
+  # Kafka
+  spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+  spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
+
+  # S3
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/fazeal-social-nonprod.fazeal.com"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: loyalty-service-secret
+  namespace: default
+  labels:
+    app: loyalty-service
+type: Opaque
+data:
+  DB_USER: YWRtaW4=
+  DB_PASSWORD: bmV3MjAyNQ==
+  REDIS_PASSWORD: YWRtaW4xMjM0
+  amazonProperties.accessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  amazonProperties.secretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  AWS_ACCESS_KEY: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+  AWS_SECRET_KEY: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsSecretKey: "aXMzYTNSZWtUYlFIdHNFQTAydFVBYW40Q3pIU3VpQTdodFA2a2xScA=="
+  amazonProperties.assetsAccessKey: "VVU1MUJSWVFSOEpKSkQyWDBTMTE="
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loyalty-service
+  namespace: default
+  labels:
+    app: loyalty-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: loyalty-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loyalty-service
+  namespace: default
+  labels:
+    app: loyalty-service
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: loyalty-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: loyalty-service
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Waiting for ${DB_HOST}:${DB_PORT}...";
+              until nc -z ${DB_HOST} ${DB_PORT}; do sleep 2; done;
+              echo "Postgres is reachable.";
+          env:
+            - name: DB_HOST
+              valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: DB_PORT } }
+
+      containers:
+        - name: loyalty-service
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+          env:
+            - { name: SERVICE_NAME, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: SERVICE_NAME } } }
+            - { name: SPRING_DATASOURCE_URL, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: SPRING_DATASOURCE_URL } } }
+            - { name: SPRING_DATASOURCE_USERNAME, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: DB_USER } } }
+            - { name: SPRING_DATASOURCE_PASSWORD, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: DB_PASSWORD } } }
+            - { name: REDIS_PASSWORD, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: REDIS_PASSWORD } } }
+            - { name: amazonProperties.accessKey, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: "amazonProperties.accessKey" } } }
+            - { name: amazonProperties.secretKey, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: "amazonProperties.secretKey" } } }
+            - { name: AWS_ACCESS_KEY, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: AWS_ACCESS_KEY } } }
+            - { name: AWS_SECRET_KEY, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: AWS_SECRET_KEY } } }
+            - { name: amazonProperties.assetsSecretKey, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: "amazonProperties.assetsSecretKey" } } }
+            - { name: amazonProperties.assetsAccessKey, valueFrom: { secretKeyRef: { name: loyalty-service-secret, key: "amazonProperties.assetsAccessKey" } } }
+            - { name: NAMESPACE, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: NAMESPACE } } }
+            - { name: ENVIRONMENT, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: ENVIRONMENT } } }
+            - { name: LOG_LEVEL, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: LOG_LEVEL } } }
+            - { name: server.port, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: server.port } } }
+            - { name: DISCOVERY_URL, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: DISCOVERY_URL } } }
+            - { name: CONFIG_URL, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: CONFIG_URL } } }
+            - { name: eureka.instance.ip-address, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: eureka.instance.ip-address } } }
+            - { name: eureka.instance.prefer-ip-address, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: eureka.instance.prefer-ip-address } } }
+            - { name: spring.profiles.active, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: spring.profiles.active } } }
+            - { name: REDIS_HOST, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: REDIS_HOST } } }
+            - { name: REDIS_PORT, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: REDIS_PORT } } }
+            - { name: spring.kafka.producer.bootstrap-servers, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: spring.kafka.producer.bootstrap-servers } } }
+            - { name: spring.cloud.stream.kafka.binder.brokers, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: spring.cloud.stream.kafka.binder.brokers } } }
+            - { name: amazonProperties.endpointUrl, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: amazonProperties.endpointUrl } } }
+            - { name: amazonProperties.bucketName, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: amazonProperties.bucketName } } }
+            - { name: amazonProperties.assetsBucketName, valueFrom: { configMapKeyRef: { name: loyalty-service-config, key: amazonProperties.assetsBucketName } } }
+
+          startupProbe:
+            tcpSocket: { port: 80 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: loyalty-service-hpa
+  namespace: default
+  labels:
+    app: loyalty-service
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: loyalty-service
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: loyalty-service-pdb
+  namespace: default
+  labels:
+    app: loyalty-service
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: loyalty-service

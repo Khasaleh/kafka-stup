@@ -1,0 +1,216 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: watermark-detection-config
+  namespace: default
+  labels:
+    app: watermark-detection
+data:
+  SERVICE_NAME: "watermark-detection"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  server.port: "8105"
+
+  # Discovery
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  CONFIG_URL: "http://config-server"
+  eureka.instance.ip-address: "watermark-detection"
+  spring.profiles.active: "dev"
+
+  # Kafka (DEV brokers)
+  KAFKA_BOOTSTRAP_SERVERS: "192.168.1.225:29093"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: watermark-detection-secret
+  namespace: default
+  labels:
+    app: watermark-detection
+type: Opaque
+data: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watermark-detection
+  namespace: default
+  labels:
+    app: watermark-detection
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8105
+      targetPort: 8105
+      protocol: TCP
+      name: http
+  selector:
+    app: watermark-detection
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: watermark-detection
+  namespace: default
+  labels:
+    app: watermark-detection
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: watermark-detection
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: watermark-detection
+    spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dockerhub-secret
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      initContainers:
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              for hp in $(echo ${KAFKA_BOOTSTRAP_SERVERS} | tr ',' ' '); do
+                H=$(echo "$hp" | cut -d':' -f1); P=$(echo "$hp" | cut -d':' -f2);
+                echo "Waiting for $H:$P ...";
+                until nc -z $H $P; do sleep 2; done;
+              done
+              echo "Kafka is reachable."
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: watermark-detection-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+
+      containers:
+        - name: watermark-detection
+          image: khsaleh889/familymicroservices:$IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8105
+              protocol: TCP
+
+          env:
+            - { name: SERVICE_NAME, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: SERVICE_NAME } } }
+            - { name: NAMESPACE, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: NAMESPACE } } }
+            - { name: ENVIRONMENT, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: ENVIRONMENT } } }
+            - { name: LOG_LEVEL, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: LOG_LEVEL } } }
+            - { name: server.port, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: server.port } } }
+            - { name: DISCOVERY_URL, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: DISCOVERY_URL } } }
+            - { name: CONFIG_URL, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: CONFIG_URL } } }
+            - { name: eureka.instance.ip-address, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: eureka.instance.ip-address } } }
+            - { name: spring.profiles.active, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: spring.profiles.active } } }
+
+            # Kafka envs (cover common libs & Spring)
+            - { name: KAFKA_BOOTSTRAP_SERVERS, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: KAFKA_BOOTSTRAP_SERVERS } } }
+            - { name: BOOTSTRAP_SERVERS, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: KAFKA_BOOTSTRAP_SERVERS } } }
+            - { name: METADATA_BROKER_LIST, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: KAFKA_BOOTSTRAP_SERVERS } } }
+            - { name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: KAFKA_BOOTSTRAP_SERVERS } } }
+            - { name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: KAFKA_BOOTSTRAP_SERVERS } } }
+            - { name: SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS, valueFrom: { configMapKeyRef: { name: watermark-detection-config, key: KAFKA_BOOTSTRAP_SERVERS } } }
+
+          startupProbe:
+            tcpSocket: { port: 8105 }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket: { port: 8105 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket: { port: 8105 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: watermark-detection-hpa
+  namespace: default
+  labels:
+    app: watermark-detection
+    component: hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: watermark-detection
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: watermark-detection-pdb
+  namespace: default
+  labels:
+    app: watermark-detection
+    component: pdb
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: watermark-detection

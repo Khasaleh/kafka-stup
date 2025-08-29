@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-employees-config
+  namespace: default
+  labels:
+    app: angular-employees
+data:
+  SERVICE_NAME: "angular-employees"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  NGINX_PORT: "8183"

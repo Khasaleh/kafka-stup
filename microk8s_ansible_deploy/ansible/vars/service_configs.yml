@@ -1,0 +1,248 @@
+---
+# Service-specific configurations based on working deployments
+service_configs:
+  config-server:
+    configmap:
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      BUSINESS_MANGE_DB_HOST: "192.168.1.213"
+      spring.profiles.active: "dev"
+    secret:
+      CONFIG_USER: "Khsaleh2024"
+      CONFIG_PASS: "ATBBsS3gExWYHwV4nWSjgAR3ypSW4FCC4191"
+    container_port: 8888
+    health_check:
+      type: "tcpSocket"
+      port: 8888
+
+  api-server:
+    configmap:
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      shoppinglist-api.base: "http://shopping-service:80"
+      posts-service.base: "http://posts-service:80"
+      events-api.base: "http://events-service:80"
+      loyalty-service-api.base: "http://loyalty-service:80"
+      video-api.base: "http://album-service:80"
+      image-api.base: "http://album-service:80"
+      album-api.base: "http://album-service:80"
+      user-notification-service-api.base: "http://notification-service:80"
+      customer-service-api.base: "http://customer-service:80"
+      payment-service-api.base: "http://payment-service:80"
+      order-service-api.base: "http://order-service:80/api/v1"
+      fazeal-logistics-api.base: "http://fazeal-logistics:80/api/v1"
+      stripe-payment-service-api.base: "http://payment-service:80/api/v1/stripepayments"
+      checkout-service-api.base: "http://customer-service:80/api/v1"
+      site-management-service-api.base: "http://site-management-service:80/api/v1"
+      paypal-payment-service-api.base: "http://payment-service:80/api/v1/paypalpayments"
+      fazeal-business-admin-management-service-api.base: "http://fazeal-business-management:80"
+      reservation-service-api.base: "http://restaurant-reservation-service:80/api/v1"
+      catalog-service-api.base: "http://catalog-service:80/api/v1"
+      amazonProperties.bucketName: "fazeal-social-nonprod"
+      DB_HOST: "192.168.1.213"
+      DB_USER: "admin"
+      SPRING_PROFILES_ACTIVE: "dev"
+      HOST_IP: "api-server"
+      HOST_PORT: "8002"
+      JWT_SECRET: "CIUISecretKeyqwertyuiopASDFGHJKLzxcvbnmQWERTYUIOPasdfghjklZXCVBNMCIUISecretKeyqwertyuiopASDFGHJKLzxcvbnmQWERTYUIOPasdfghjklZXCVBNM"
+      eureka.instance.ip-address: "api-server"
+      eureka.instance.prefer-ip-address: "true"
+      server.port: "80"
+      REDIS_HOST: "192.168.1.217"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "admin1234"
+      spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+      spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+      spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
+      restaurant-service-api.base: "http://restaurant-catalog-service:80"
+      promotion-service-api.base: "http://promotion-service:80/api/v1"
+      chirps-delete-service.base: "https://dev-elastic.fazeal.com/fazealChirps/_delete_by_query"
+      chirps-search-service.base: "https://dev-elastic.fazeal.com/fazealChirps/_search"
+      family-search-service.base: "https://dev-elastic.fazeal.com/fazealGroups/_search"
+      hashtag-search-service.base: "https://dev-elastic.fazeal.com/fazealHashtags/_search"
+      news-search-service.base: "https://dev-elastic.fazeal.com/fazeal-news-v1/_search"
+      sketch-search-service.base: "https://dev-elastic.fazeal.com/fazeal-sketch-v1/_search"
+      search-service.base: "https://dev-elastic.fazeal.com/fazealUsers/_search"
+      voting-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_delete_by_query"
+      sketch-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-sket-v1/_delete_by_query"
+      chirps-bulkupdate-service.base: "https://dev-elastic.fazeal.com/fazeal-chirps-v1/_update_by_query"
+      chirps-create-service.base: "https://dev-elastic.fazeal.com/fazeal-chirps-v1/_doc"
+      family-create-service.base: "https://dev-elastic.fazeal.com/fazealGroups/_doc"
+      family-delete-service.base: "https://dev-elastic.fazeal.com/fazealGroups/_delete_by_query"
+      post-bulkupdate-service.base: "https://dev-elastic.fazeal.com/fazeal-posts-v1/_update_by_query"
+      post-create-service.base: "https://dev-elastic.fazeal.com/fazeal-posts-v1/_doc"
+      post-delete-service.base: "https://dev-elastic.fazeal.com/fazeal-posts-v1/_delete_by_query"
+      sketch-bulkupdate-service.base: "https://dev-elastic.fazeal.com/fazeal-sketch-v1/_update_by_query"
+      sketch-create-service.base: "https://dev-elastic.fazeal.com/fazeal-sketch-v1/_doc"
+      user-create-service.base: "https://dev-elastic.fazeal.com/fazealUsers/_doc"
+      user-delete-service.base: "https://dev-elastic.fazeal.com/fazealUsers/_delete_by_query"
+      voing-bulkupdate-service.base: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_update_by_query"
+      voting-create-service.base: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_doc"
+      voting-search-service.base: "https://dev-elastic.fazeal.com/fazeal-voting-v1/_search"
+    secret:
+      amazonProperties.accessKey: "AKIA22Z7QLS6BLVB5HVD"
+      amazonProperties.secretKey: "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"
+      AWS_ACCESS_KEY: "AKIA22Z7QLS6BLVB5HVD"
+      AWS_SECRET_KEY: "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"
+      DB_PASS: "new2025"
+    container_port: 80
+    health_check:
+      type: "tcpSocket"
+      port: 80
+
+  site-management-service:
+    configmap:
+      DB_HOST: "192.168.1.213"
+      DB_USER: "admin"
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      spring.profiles.active: "dev"
+      CONFIG_URL: "http://config-server"
+      amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+      amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+      amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+      amazonProperties.assetsSecretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      amazonProperties.assetsAccessKey: "UU51BRYQR8JJJD2X0S11"
+      spring.batch.job.enabled: "false"
+      eureka.instance.ip-address: "site-management-service"
+      server.port: "80"
+      REDIS_HOST: "192.168.1.217"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "admin1234"
+      catalog-service-api.base: "http://catalog-service:80/api/v1"
+      fazeal-social-service-api.base: "http://api-server:80"
+      user-notification-service-api.base: "http://notification-service:80"
+    secret:
+      DB_PASSWORD: "new2025"
+      amazonProperties.accessKey: "UU51BRYQR8JJJD2X0S11"
+      amazonProperties.secretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      AWS_ACCESS_KEY: "UU51BRYQR8JJJD2X0S11"
+      AWS_SECRET_KEY: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+    container_port: 80
+    health_check:
+      type: "tcpSocket"
+      port: 80
+
+  shopping-service:
+    configmap:
+      DB_HOST: "192.168.1.213"
+      DB_USER: "admin"
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      spring.profiles.active: "dev"
+      CONFIG_URL: "http://config-server"
+      amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+      amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+      amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+      amazonProperties.assetsSecretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      amazonProperties.assetsAccessKey: "UU51BRYQR8JJJD2X0S11"
+      eureka.instance.ip-address: "shopping-service"
+      eureka.instance.prefer-ip-address: "true"
+      server.port: "80"
+      REDIS_HOST: "192.168.1.217"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "admin1234"
+    secret:
+      DB_PASSWORD: "new2025"
+      amazonProperties.accessKey: "UU51BRYQR8JJJD2X0S11"
+      amazonProperties.secretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      AWS_ACCESS_KEY: "UU51BRYQR8JJJD2X0S11"
+      AWS_SECRET_KEY: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+    container_port: 8100
+    health_check:
+      type: "tcpSocket"
+      port: 80
+
+  posts-service:
+    configmap:
+      DB_HOST: "192.168.1.213"
+      DB_USER: "admin"
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      spring.profiles.active: "dev"
+      CONFIG_URL: "http://config-server"
+      amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+      amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+      amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+      amazonProperties.assetsSecretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      amazonProperties.assetsAccessKey: "UU51BRYQR8JJJD2X0S11"
+      video-api.base: "http://album-service:80"
+      image-api.base: "http://album-service:80"
+      album-api.base: "http://album-service:80"
+      fazeal-social-service-api.base: "http://api-server:80"
+      user-notification-service-api.base: "http://notification-service:80"
+      eureka.instance.ip-address: "posts-service"
+      eureka.instance.prefer-ip-address: "true"
+      server.port: "80"
+      REDIS_HOST: "192.168.1.217"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "admin1234"
+      spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+      spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+    secret:
+      DB_PASSWORD: "new2025"
+      amazonProperties.accessKey: "UU51BRYQR8JJJD2X0S11"
+      amazonProperties.secretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      AWS_ACCESS_KEY: "UU51BRYQR8JJJD2X0S11"
+      AWS_SECRET_KEY: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+    container_port: 8101
+    health_check:
+      type: "tcpSocket"
+      port: 80
+
+  ads-service:
+    configmap:
+      DB_HOST: "192.168.1.213"
+      DB_USER: "admin"
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      spring.profiles.active: "dev"
+      CONFIG_URL: "http://config-server"
+      spring.batch.job.enabled: "false"
+      eureka.instance.ip-address: "ads-service"
+      server.port: "80"
+      REDIS_HOST: "192.168.1.217"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "admin1234"
+      user-notification-service-api.base: "http://notification-service:80"
+      album-api.base: "http://album-service:80"
+      fazeal-business-admin-service-api.base: "http://fazeal-business:80"
+    secret:
+      DB_PASSWORD: "new2025"
+    container_port: 80
+    health_check:
+      type: "tcpSocket"
+      port: 80
+
+  album-service:
+    configmap:
+      DB_HOST: "192.168.1.213"
+      DB_USER: "admin"
+      DISCOVERY_URL: "http://192.168.1.212:8761"
+      spring.profiles.active: "dev"
+      CONFIG_URL: "http://config-server"
+      amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+      amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+      amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+      amazonProperties.assetsSecretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      amazonProperties.assetsAccessKey: "UU51BRYQR8JJJD2X0S11"
+      JWT_SECRET: "CIUISecretKeyqwertyuiopASDFGHJKLzxcvbnmQWERTYUIOPasdfghjklZXCVBNMCIUISecretKeyqwertyuiopASDFGHJKLzxcvbnmQWERTYUIOPasdfghjklZXCVBNM"
+      spring.batch.job.enabled: "false"
+      eureka.instance.ip-address: "album-service"
+      eureka.instance.prefer-ip-address: "true"
+      server.port: "80"
+      spring.cloud.stream.kafka.binder.brokers: "192.168.1.225:29093,192.168.1.225:39093"
+      spring.kafka.producer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+      spring.kafka.consumer.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+      spring.kafka.bootstrap-servers: "192.168.1.225:29093,192.168.1.225:39093"
+      fazeal-social-service-api.base: "http://api-server:80"
+      REDIS_HOST: "192.168.1.217"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "admin1234"
+    secret:
+      DB_PASSWORD: "new2025"
+      amazonProperties.accessKey: "UU51BRYQR8JJJD2X0S11"
+      amazonProperties.secretKey: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+      AWS_ACCESS_KEY: "UU51BRYQR8JJJD2X0S11"
+      AWS_SECRET_KEY: "is3a3RekTbQHtsEA02tUAan4CzHSuiA7htP6klRp"
+    container_port: 8099
+    health_check:
+      type: "tcpSocket"
+      port: 80
+
+  # Add more services as needed...
+  # This is a template - you can add all the other services following the same pattern 

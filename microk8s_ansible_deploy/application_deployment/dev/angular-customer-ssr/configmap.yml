@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: angular-customer-ssr-config
+  namespace: default
+  labels:
+    app: angular-customer-ssr
+data:
+  SERVICE_NAME: "angular-customer-ssr"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DEBUG: "*"
+  NGINX_PORT: "8182"
+  SSR_PORT: "4001"

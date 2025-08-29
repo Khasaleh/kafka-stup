@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fazeal-business-management-config
+  namespace: default
+  labels:
+    app: fazeal-business-management
+data:
+  SERVICE_NAME: "fazeal-business-management"
+  NAMESPACE: "default"
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DISCOVERY_URL: "http://192.168.1.212:8761"
+  DB_HOST: "192.168.1.213"
+  spring.profiles.active: "dev"
+  catalog-service-api: "http://catalog-service:80/api/v1"
+  payment-service-api.base: "http://payment-service:80"
+  fazeal-social-service-api.base: "http://api-server:80"
+  album-api.base: "http://album-service:80"
+  user-notification-service-api.base: "http://notification-service:80"
+  site-management-service-api.base: "http://site-management-service:80/api/v1"
+  amazonProperties.endpointUrl: "https://s3.us-east-1.wasabisys.com/"
+  amazonProperties.bucketName: "fazeal-social-nonprod.fazeal.com"
+  amazonProperties.assetsBucketName: "fazeal-ui-assets.fazeal.com"
+  spring.cloud.config.import-check.enabled: "false"
+  eureka.instance.ip-address: "fazeal-business-management"
+  eureka.instance.prefer-ip-address: "true"
+  server.port: "80"
+  REDIS_HOST: "192.168.1.217"
+  REDIS_PORT: "6379"
+  CONFIG_URL: "http://config-server"
+

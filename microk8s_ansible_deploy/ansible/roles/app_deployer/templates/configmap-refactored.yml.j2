@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ app_name }}-config"
+  namespace: "{{ app_namespace | default('default') }}"
+  labels:
+    app: "{{ app_name }}"
+data:
+  SERVICE_NAME: "{{ app_name }}"
+  DEPLOYMENT_MODE: "refactored" 

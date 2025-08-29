@@ -1,0 +1,91 @@
+---
+- name: Generate Service-Specific Kubernetes Manifests
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - "cluster_vars/{{ env }}.yml"
+    - "group_vars/{{ env }}/main.yml"
+    - vars/services.yml
+    - vars/service_configs.yml
+    - group_vars/all/main.yml
+    - group_vars/all/vault.yml
+
+  pre_tasks:
+    - name: Ensure environment variable is defined
+      fail:
+        msg: "The 'env' variable is not defined. Please pass it as an extra var, e.g., -e 'env=dev'"
+      when: env is not defined
+
+    - name: Create application deployment directory structure
+      file:
+        path: "application_deployment/{{ env }}/{{ item.name }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ services }}"
+      delegate_to: localhost
+      run_once: true
+
+  tasks:
+    - name: Generate deployment manifest for each service
+      template:
+        src: "service-deployment.yml.j2"
+        dest: "application_deployment/{{ env }}/{{ item.name }}/deployment.yml"
+        mode: '0644'
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      vars:
+        app_name: "{{ service.name }}"
+        app_image: "{{ service.image_repo | default('khsaleh889/familymicroservices') }}:{{ service.image_tag }}"
+        app_replicas: "{{ service.replicas | default(1) }}"
+        app_container_port: "{{ service.container_port | default(80) }}"
+        app_resources: "{{ service.resources | default({'requests': {'cpu': '100m', 'memory': '128Mi'}, 'limits': {'cpu': '500m', 'memory': '512Mi'}}) }}"
+        app_health_check_path: "{{ service.health_check_path | default('/') }}"
+        app_health_check_type: "{{ service.health_check_type | default('tcpSocket') }}"
+        app_health_check_port: "{{ service.health_check_port | default(service.container_port | default(80)) }}"
+
+    - name: Generate configmap manifest for each service
+      template:
+        src: "service-configmap.yml.j2"
+        dest: "application_deployment/{{ env }}/{{ item.name }}/configmap.yml"
+        mode: '0644'
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      vars:
+        app_name: "{{ service.name }}"
+        app_namespace: "{{ service.namespace | default('default') }}"
+
+    - name: Generate secret manifest for each service
+      template:
+        src: "service-secret.yml.j2"
+        dest: "application_deployment/{{ env }}/{{ item.name }}/secret.yml"
+        mode: '0644'
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      vars:
+        app_name: "{{ service.name }}"
+        app_namespace: "{{ service.namespace | default('default') }}"
+
+    - name: Generate service manifest for each service
+      template:
+        src: "service-service.yml.j2"
+        dest: "application_deployment/{{ env }}/{{ item.name }}/service.yml"
+        mode: '0644'
+      loop: "{{ services }}"
+      loop_control:
+        loop_var: service
+      delegate_to: localhost
+      run_once: true
+      vars:
+        app_name: "{{ service.name }}"
+        app_namespace: "{{ service.namespace | default('default') }}"
+        app_container_port: "{{ service.container_port | default(80) }}"
+        app_service_port: "{{ service.service_port | default(80) }}" 
