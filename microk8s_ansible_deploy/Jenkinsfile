@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    environment {
+        // This assumes that the `ansible-vault-password.txt` is managed
+        // as a secret file in Jenkins and mounted at this location.
+        ANSIBLE_VAULT_PASSWORD_FILE = credentials('ansible-vault-password')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // This will check out the code from the repository that contains this Jenkinsfile
+                checkout scm
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                script {
+                    // This assumes that the ansible command is available on the Jenkins agent
+                    // and that the hosts file is configured correctly.
+                    // The `-e "env=dev"` is an example; this could be a parameter in the Jenkins job.
+                    sh 'ansible-playbook -i ansible/hosts ansible/main.yml -e "env=dev" --vault-password-file $ANSIBLE_VAULT_PASSWORD_FILE'
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    // This is a simple health check. It assumes that kubectl is configured
+                    // on the Jenkins agent to connect to the new cluster.
+                    // A more robust health check would be needed for a production environment.
+                    sh 'kubectl get nodes'
+                    sh 'kubectl get pods --all-namespaces'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+    }
+}
